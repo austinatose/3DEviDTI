@@ -1,4 +1,3 @@
-
 import argparse
 import os
 import sys
@@ -24,6 +23,8 @@ AFDB_FILE_TMPLS = [
     "https://alphafold.ebi.ac.uk/files/AF-{}-{}-model_v4.pdb",  # F1 v4
     "https://alphafold.ebi.ac.uk/files/AF-{}-{}-model_v3.pdb",  # F1 v3
 ]
+
+UNIPROT_ENTRY = "https://rest.uniprot.org/uniprotkb/{}.json"
 
 HEADERS = {"User-Agent": "evidti-structure-fetcher/1.1"}
 
@@ -152,18 +153,129 @@ def rcsb_entry_meta(pdb_id: str) -> dict:
         res = res[0]
     return {"method": str(method).lower(), "resolution": res}
 
+# ---------- UniProt cross-references ----------
+def fetch_uniprot_entry(uniprot: str) -> Optional[dict]:
+    """Fetch a UniProtKB entry as JSON for a given accession."""
+    print(f"Fetching UniProt entry for {uniprot}...", file=sys.stderr)
+    print(f"URL: {UNIPROT_ENTRY.format(uniprot)}", file=sys.stderr)
+    return _get_json(UNIPROT_ENTRY.format(uniprot))
+
+
+def _props_to_dict(props_list: Optional[List[dict]]) -> Dict[str, str]:
+    d = {}
+    if not props_list:
+        return d
+    for p in props_list:
+        k = p.get("key")
+        v = p.get("value")
+        if k is not None and v is not None:
+            d[str(k)] = str(v)
+    return d
+
+
+def parse_uniprot_pdb_rows(uniprot: str, uni_js: Optional[dict]) -> List[dict]:
+    """Parse UniProtKB cross-references to PDB into rows compatible with PDBe parser output.
+    Notes:
+      - UniProt PDB xrefs include `Method`, `Resolution`, and `Chains` in properties.
+      - `Chains` format examples: "A=1-100", "A/B=5-120", "A=1-90,B=100-180". We split by commas, then by '='.
+      - Coverage is computed from UniProt sequence length when available.
+    """
+    rows: List[dict] = []
+    if not uni_js:
+        return rows
+
+    # UniProt sequence length for coverage
+    try:
+        unp_len = int(((uni_js or {}).get("sequence", {}) or {}).get("length", None))
+    except Exception:
+        unp_len = None
+
+    xrefs = (uni_js or {}).get("uniProtKBCrossReferences", []) or []
+    for x in xrefs:
+        if x.get("database") != "PDB":
+            continue
+        pdb_id = str(x.get("id", "")).upper()
+        if not pdb_id:
+            continue
+        props = _props_to_dict(x.get("properties"))
+        method = (props.get("Method") or "").lower()
+        # Resolution often like "2.20 A" or "2.2 Å"; extract leading float if present
+        res_raw = props.get("Resolution") or ""
+        res_val: Optional[float] = None
+        try:
+            if res_raw:
+                # take first token convertible to float
+                token = str(res_raw).replace("\u00c5"," ").replace("A"," ").strip().split()[0]
+                res_val = float(token)
+        except Exception:
+            res_val = None
+        chains_str = props.get("Chains") or ""
+        if not chains_str:
+            # No residue mapping info; still register candidate without chain/coverage
+            rows.append({
+                "pdb_id": pdb_id,
+                "chain_id": None,
+                "unp_start": None,
+                "unp_end": None,
+                "pdb_start": None,
+                "pdb_end": None,
+                "coverage": None,
+                "method": method,
+                "resolution": res_val,
+            })
+            continue
+        # split on commas between chain segments
+        for seg in chains_str.split(","):
+            seg = seg.strip()
+            if not seg:
+                continue
+            # expected forms: "A=1-100" or "A/B=5-120"; choose first chain label when multiple
+            if "=" in seg:
+                chain_part, range_part = seg.split("=", 1)
+            else:
+                chain_part, range_part = seg, ""
+            chain_id = chain_part.split("/")[0].strip()
+            unp_start = None
+            unp_end = None
+            if "-" in range_part:
+                a, b = range_part.split("-", 1)
+                try:
+                    unp_start = int(a)
+                    unp_end = int(b)
+                except Exception:
+                    unp_start = None
+                    unp_end = None
+            cov = None
+            if unp_len and unp_start is not None and unp_end is not None and unp_end >= unp_start:
+                cov = (unp_end - unp_start + 1) / float(unp_len)
+            rows.append({
+                "pdb_id": pdb_id,
+                "chain_id": chain_id or None,
+                "unp_start": unp_start,
+                "unp_end": unp_end,
+                "pdb_start": None,
+                "pdb_end": None,
+                "coverage": cov,
+                "method": method,
+                "resolution": res_val,
+            })
+    return rows
+
 # ---------- Selection & download ----------
-def choose_best(rows: List[dict], min_cov: float = 0.2) -> Optional[dict]:
+
+# ---------- Ranking helper ----------
+def rank_candidates(rows: List[dict], min_cov: float = 0.2) -> List[dict]:
+    """Deduplicate, enrich, filter, and rank PDB candidates."""
     if not rows:
-        return None
-    # Dedup per (pdb, chain)
+        return []
+    # Dedup per (pdb, chain), keep higher coverage
     uniq = {}
     for r in rows:
         k = (r["pdb_id"], r.get("chain_id"))
         if k not in uniq or (r.get("coverage") or 0) > (uniq[k].get("coverage") or 0):
-            uniq[k] = r
+            uniq[k] = dict(r)  # shallow copy to avoid mutating input
     cands = list(uniq.values())
-    # enrich with method/resolution
+    # enrich with method/resolution via RCSB (cache per pdb_id)
     meta_cache = {}
     for r in cands:
         pid = r["pdb_id"]
@@ -171,14 +283,19 @@ def choose_best(rows: List[dict], min_cov: float = 0.2) -> Optional[dict]:
             meta_cache[pid] = rcsb_entry_meta(pid)
         r.update(meta_cache[pid])
     # filter by coverage
-    filt = [r for r in cands if (r.get("coverage") or 0) >= min_cov] or cands
+    filtered = [r for r in cands if (r.get("coverage") or 0) >= min_cov]
+    filt = filtered if filtered else cands
     def key(r):
         method = r.get("method","")
         res = r.get("resolution", 1e9) or 1e9
         cov = r.get("coverage") or 0.0
         mscore = 2 if "x-ray" in method else (1 if "electron" in method or "cryo" in method else 0)
         return (-mscore, res, -cov)
-    return sorted(filt, key=key)[0]
+    return sorted(filt, key=key)
+
+def choose_best(rows: List[dict], min_cov: float = 0.2) -> Optional[dict]:
+    cands = rank_candidates(rows, min_cov)
+    return cands[0] if cands else None
 
 def download_coords(pdb_id: str, fmt: str, out_path: str) -> bool:
     url = RCSB_DOWNLOAD_MMCIF.format(pdb_id) if fmt == "mmcif" else RCSB_DOWNLOAD_PDB.format(pdb_id)
@@ -216,11 +333,20 @@ def process_one(uniprot: str, out_dir: str, fmt: str, min_cov: float, af_fallbac
     # PDBe route
     sifts = fetch_pdbe_mappings(uniprot)
     rows = parse_pdbe_rows(uniprot, sifts) if sifts else []
-    # If PDBe failed, try RCSB search to at least get PDB IDs
+    # If PDBe failed, try UniProtKB cross-references (PDB), then RCSB entity search
+    if not rows:
+        uni = fetch_uniprot_entry(uniprot)
+        rows = parse_uniprot_pdb_rows(uniprot, uni)
     if not rows:
         ents = rcsb_polymer_entities_for_uniprot(uniprot)
         rows = [{"pdb_id": e["pdb_id"], "chain_id": None, "coverage": None} for e in ents]
-    choice = choose_best(rows, min_cov) if rows else None
+    # Compute ranked candidates for visibility
+    cands = rank_candidates(rows, min_cov) if rows else []
+    rec["candidates"] = [
+        {"rank": i+1, **{k: c.get(k) for k in ["pdb_id","chain_id","method","resolution","coverage"]}}
+        for i, c in enumerate(cands)
+    ]
+    choice = cands[0] if cands else None
     if choice:
         pid = choice["pdb_id"]; ch = choice.get("chain_id")
         ext = "cif" if fmt == "mmcif" else "pdb"
@@ -251,6 +377,7 @@ def main():
     ap.add_argument("--min_coverage", type=float, default=0.2)
     ap.add_argument("--alphafold_fallback", type=int, default=1)
     ap.add_argument("--alphafold_isoform", default="F1", help="e.g., F1/F2 if you need a specific isoform")
+    ap.add_argument("--write_candidates", type=int, default=1, help="Write an aggregated candidates.csv with all ranked PDB options per UniProt (1=yes,0=no)")
     args = ap.parse_args()
 
     df = pd.read_csv(args.input_csv)
@@ -265,18 +392,42 @@ def main():
 
     os.makedirs(args.out_dir, exist_ok=True)
     recs = []
+    all_cands = []
     for acc in tqdm(df[args.uniprot_col].astype(str), desc="Fetching"):
         acc = acc.strip()
         if not acc or acc.lower() == "nan":
             continue
-        r = process_one(acc, args.out_dir, args.format, args.min_coverage, bool(args.alphafold_fallback), args.alphafold_isoform)
+
+        out_folder = os.path.join(args.out_dir, acc)
+        # Skip if the UniProt folder already exists and contains any files
+        if os.path.isdir(out_folder) and any(os.scandir(out_folder)):
+            print(f"Skipping {acc}: folder already exists with files at {out_folder}")
+            continue
+
+        r = process_one(
+            acc,
+            args.out_dir,
+            args.format,
+            args.min_coverage,
+            bool(args.alphafold_fallback),
+            args.alphafold_isoform,
+        )
         recs.append(r)
+        if args.write_candidates and r.get("candidates"):
+            for cand in r["candidates"]:
+                all_cands.append({"uniprot": r["uniprot"], **cand})
 
     man = pd.DataFrame(recs)
     man_path = os.path.join(args.out_dir, "manifest.csv")
     man.to_csv(man_path, index=False)
     with open(os.path.join(args.out_dir, "manifest.json"), "w") as f:
         json.dump(recs, f, indent=2)
+
+    if args.write_candidates and all_cands:
+        cdf = pd.DataFrame(all_cands)
+        cols = ["uniprot", "rank", "pdb_id", "chain_id", "method", "resolution", "coverage"]
+        cdf = cdf[cols]
+        cdf.to_csv(os.path.join(args.out_dir, "candidates.csv"), index=False)
 
     print(f"Saved manifest to {man_path}")
     print(f"PDB: {sum(1 for r in recs if r.get('source')=='pdb')}, AF: {sum(1 for r in recs if r.get('source')=='alphafold')}, Fail: {sum(1 for r in recs if not r.get('file_path'))}")
