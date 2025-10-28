@@ -2,23 +2,31 @@ import torch
 from esm import pretrained
 from esm.inverse_folding.util import load_coords, CoordBatchConverter, get_encoder_output
 
-# --- Add mappings for common modified residues so biotite can convert 3-letter to 1-letter ---
+# --- Canonicalize non‑standard residues for sequence generation -----------------
+# We extend Biotite's 3→1 map so load_coords can create a 20‑AA sequence string.
+# Geometry is unchanged; only the 1‑letter code used by the model is normalized.
 try:
     from biotite.sequence.seqtypes import ProteinSequence
-    _m = ProteinSequence._dict_3to1
-    # Map frequent PTMs/backbone subs to their canonical parents
-    for k, v in {
-        "MSE": "M",   # Selenomethionine → Met
-        "SEP": "S",   # Phosphoserine → Ser
-        "TPO": "T",   # Phosphothreonine → Thr
-        "PTR": "Y",   # Phosphotyrosine → Tyr
-        "CSO": "C",   # Oxidized Cys → Cys
-        "HIP": "H",   # Protonated His → His
-        "HID": "H",   # His delta-protonated → His
-        "HIE": "H",   # His epsilon-protonated → His
-    }.items():
-        if k not in _m:
-            _m[k] = v
+    _m = ProteinSequence._dict_3to1  # internal map used by convert_letter_3to1
+    # Core PTMs & variants → canonical parents
+    CANON_MAP = {
+        # Phospho‑residues
+        "SEP": "S", "TPO": "T", "PTR": "Y",
+        # Selenium / uncommon amino acids → closest canonical
+        "MSE": "M", "SEC": "C", "PYL": "K",
+        # Cys variants
+        "CSO": "C", "CSD": "C", "CME": "C", "CYX": "C", "CSS": "C",
+        # His protonation/tautomers
+        "HIP": "H", "HIE": "H", "HID": "H",
+        # Asp/Glu protonated
+        "ASH": "D", "GLH": "E",
+        # Oxidations / hydroxy
+        "MHO": "M", "HYP": "P",
+        # Common N/C‑terminal caps (ignore as residue letters)
+        "ACE": "X", "NME": "X",
+    }
+    for k, v in CANON_MAP.items():
+        _m.setdefault(k, v)
 except Exception:
     pass
 # -----------------------------------------------------------------------------
@@ -38,6 +46,9 @@ model, alphabet = pretrained.esm_if1_gvp4_t16_142M_UR50() ## ESM-IF1
 model = model.to(device).eval()
 
 coords, seq = load_coords("structures/O00418/8GM4_A.cif", chain="A")  # temp
+
+if "X" in seq:
+    print(f"[warn] sequence contains 'X' (unknown residues). Consider extending CANON_MAP if frequent.")
 
 rep = get_encoder_output(model, alphabet, coords)  # may allocate on MPS
 

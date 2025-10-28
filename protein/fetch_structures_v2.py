@@ -23,6 +23,7 @@ AFDB_FILE_TMPLS = [
     "https://alphafold.ebi.ac.uk/files/AF-{}-{}-model_v4.pdb",  # F1 v4
     "https://alphafold.ebi.ac.uk/files/AF-{}-{}-model_v3.pdb",  # F1 v3
 ]
+AFDB_API = "https://alphafold.ebi.ac.uk/api/prediction/{}"                  # metadata (has cifUrl/bcifUrl/pdbUrl)
 
 UNIPROT_ENTRY = "https://rest.uniprot.org/uniprotkb/{}.json"
 
@@ -52,6 +53,14 @@ def _post_json(url: str, payload: dict, retries: int = 2, timeout: int = 25):
         except Exception as e:
             err = e
         time.sleep(0.6 * (2 ** i))
+    return None
+
+# ---------- AlphaFold DB helpers ----------
+def fetch_alphafold_metadata(uniprot: str) -> Optional[List[dict]]:
+    """Return AFDB prediction metadata list for a UniProt accession, or None if not found."""
+    js = _get_json(AFDB_API.format(uniprot))
+    if js and isinstance(js, list) and js:
+        return js
     return None
 
 # ---------- PDBe SIFTS parsing ----------
@@ -309,15 +318,75 @@ def download_coords(pdb_id: str, fmt: str, out_path: str) -> bool:
         pass
     return False
 
-def download_alphafold(uniprot: str, isoform: str, out_path: str) -> bool:
-    idx = isoform or "F1"
-    for tmpl in AFDB_FILE_TMPLS:
-        url = tmpl.format(uniprot, idx)
+def download_alphafold(uniprot: str, isoform: Optional[str], out_path: str, fmt: str = "mmcif", prefer_bcif: bool = False) -> bool:
+    """
+    Download AlphaFold coordinates using the AFDB JSON API for a given UniProt accession.
+    - fmt: "mmcif" or "pdb"
+    - prefer_bcif: if True and fmt=="mmcif", prefer binaryCIF (bcifUrl) when available
+    """
+    # 1) Query AFDB metadata
+    meta = fetch_alphafold_metadata(uniprot)
+    url_candidates: List[str] = []
+    if meta:
+        # If isoform specified, try to select matching record; otherwise take the first record
+        sel = None
+        if isoform:
+            # Some records expose "isoform" like "F1"; others may have it embedded in "entryId"
+            for rec in meta:
+                if str(rec.get("isoform", "")).upper() == str(isoform).upper():
+                    sel = rec
+                    break
+            if not sel:
+                for rec in meta:
+                    if str(rec.get("entryId", "")).upper().endswith("-" + str(isoform).upper()):
+                        sel = rec
+                        break
+        if not sel:
+            sel = meta[0]
+
+        # Extract URLs in order of preference
+        cif_url = sel.get("cifUrl") or sel.get("mmCifUrl") or sel.get("mmcifUrl")
+        bcif_url = sel.get("bcifUrl")
+        pdb_url = sel.get("pdbUrl")
+        if fmt == "mmcif":
+            if prefer_bcif and bcif_url:
+                url_candidates.append(bcif_url)
+            if cif_url:
+                url_candidates.append(cif_url)
+            if bcif_url:
+                url_candidates.append(bcif_url)
+            # As a very last resort, fall back to PDB text if no CIF present
+            if pdb_url:
+                url_candidates.append(pdb_url)
+        else:
+            if pdb_url:
+                url_candidates.append(pdb_url)
+            # Allow CIF as fallback even if PDB requested
+            if cif_url:
+                url_candidates.append(cif_url)
+            if bcif_url:
+                url_candidates.append(bcif_url)
+
+    # 2) Legacy filename fallback if API is unavailable
+    if not url_candidates:
+        if fmt == "pdb":
+            idx = isoform or "F1"
+            for tmpl in AFDB_FILE_TMPLS:
+                url_candidates.append(tmpl.format(uniprot, idx))
+        else:
+            # Known mmCIF pattern (not officially documented, so use as last resort)
+            idx = isoform or "F1"
+            url_candidates.append(f"https://alphafold.ebi.ac.uk/files/AF-{uniprot}-{idx}-model_v4.cif")
+            url_candidates.append(f"https://alphafold.ebi.ac.uk/files/AF-{uniprot}-{idx}-model_v3.cif")
+
+    # 3) Try downloading the first working candidate
+    for url in url_candidates:
         try:
-            r = requests.get(url, headers=HEADERS, timeout=60)
+            r = requests.get(url, headers=HEADERS, timeout=90)
             if r.status_code == 200 and len(r.content) > 200:
                 with open(out_path, "wb") as f:
                     f.write(r.content)
+                print(f"Downloaded AlphaFold structure for {uniprot} from {url}", file=sys.stderr)
                 return True
         except Exception:
             pass
@@ -361,8 +430,9 @@ def process_one(uniprot: str, out_dir: str, fmt: str, min_cov: float, af_fallbac
         rec["note"] = f"Failed to download {fmt} for {pid}"
     # AlphaFold fallback
     if af_fallback:
-        fpath = os.path.join(out_dir, uniprot, f"AF-{uniprot}-{af_isoform or 'F1'}-model.pdb")
-        if download_alphafold(uniprot, af_isoform, fpath):
+        ext = "cif" if fmt == "mmcif" else "pdb"
+        fpath = os.path.join(out_dir, uniprot, f"AF-{uniprot}-{af_isoform or 'F1'}-model.{ext}")
+        if download_alphafold(uniprot, af_isoform, fpath, fmt=fmt):
             rec.update({"source": "alphafold", "file_path": fpath})
             return rec
         rec["note"] = (rec["note"] + "; " if rec["note"] else "") + "AlphaFold download failed"

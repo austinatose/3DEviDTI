@@ -3,16 +3,47 @@ import re
 import json
 import glob
 from pathlib import Path
+from tqdm import tqdm
 
 import torch
 from esm import pretrained
 from esm.inverse_folding.util import load_coords, get_encoder_output
 
+# --- Canonicalize non‑standard residues for sequence generation -----------------
+# Extend Biotite's 3→1 map so load_coords can create a 20‑AA sequence string.
+# Geometry is unchanged; only the 1‑letter code used by the model is normalized.
+try:
+    from biotite.sequence.seqtypes import ProteinSequence
+    _m = ProteinSequence._dict_3to1  # internal map used by convert_letter_3to1
+    CANON_MAP = {
+        # Canonical explicit
+        "SER": "S", "DSN": "S",
+        # Phospho‑residues
+        "SEP": "S", "TPO": "T", "PTR": "Y",
+        # Selenium / uncommon amino acids → closest canonical
+        "MSE": "M", "SEC": "C", "PYL": "K",
+        # Cys variants
+        "CSO": "C", "CSD": "C", "CME": "C", "CYX": "C", "CSS": "C",
+        # His protonation/tautomers
+        "HIP": "H", "HIE": "H", "HID": "H",
+        # Asp/Glu protonated
+        "ASH": "D", "GLH": "E",
+        # Oxidations / hydroxy
+        "MHO": "M", "HYP": "P",
+        # Common N/C‑terminal caps (ignored in sequence semantics)
+        "ACE": "X", "NME": "X",
+    }
+    for k, v in CANON_MAP.items():
+        _m.setdefault(k, v)
+except Exception:
+    pass
+# -----------------------------------------------------------------------------
+
 # -------------------- Config --------------------
 STRUCT_ROOT = Path("structures")             # root folder containing your CIF/PDB files
 EMB_ROOT = Path("embeddings")                # where to write outputs
-SAVE_PER_FILE = True                          # save per-structure residue embeddings
-AGGREGATE = True                              # write aggregated global embeddings
+SAVE_PER_FILE = False                          # save per-structure residue embeddings
+AGGREGATE = False                              # write aggregated global embeddings
 DEVICE = torch.device("cpu")                 # keep CPU for stability
 POOL_STD = True                               # include std pooling (for 1024-D)
 
@@ -53,20 +84,45 @@ def pool_mean_std(emb: torch.Tensor) -> torch.Tensor:
 files = sorted(
     list(STRUCT_ROOT.rglob("*.cif")) + list(STRUCT_ROOT.rglob("*.pdb"))
 )
+
+print(f"Found {len(files)} structure files under {STRUCT_ROOT}/")
 if not files:
     print(f"No structures found under {STRUCT_ROOT}/. Nothing to do.")
     raise SystemExit(0)
+
+ok_cnt = 0
+skip_cnt = 0
 
 index = []            # metadata rows
 globals_512 = []      # list of 512-D tensors
 globals_1024 = []     # list of 1024-D tensors (mean+std)
 
-for i, fpath in enumerate(files, 1):
+for i, fpath in enumerate(tqdm(files), 1):
     try:
-        # Load coords + sequence (let util infer chain tokens from filename when possible)
-        # For multi-chain files named like 2R5T_A.cif this is correct; if not, you can
-        # force a chain by adding chain_id="A" to load_coords.
-        coords, seq = load_coords(str(fpath), chain="A")
+        # Prefer letting util choose chain; if name has _X, try that as a fallback
+        m_chain = re.search(r"_([A-Za-z0-9])\.(?:cif|pdb)$", fpath.name)
+        tried = []
+        last_err = None
+        for attempt in ("named", "A", "X", "AAA"):
+            try:
+                if attempt == "named" and m_chain:
+                    coords, seq = load_coords(str(fpath), chain=m_chain.group(1))
+                elif attempt == "A":
+                    coords, seq = load_coords(str(fpath), chain="A")
+                elif attempt == "X":
+                    coords, seq = load_coords(str(fpath), chain="X")
+                else:
+                    continue
+                break  # success
+            except Exception as e:
+                last_err = e
+                tried.append(attempt)
+                coords = seq = None
+        if coords is None or seq is None:
+            raise RuntimeError(f"load_coords failed (tried {tried}): {last_err}")
+
+        if "X" in seq:
+            print(f"[warn] {fpath.name}: sequence contains 'X' (unknown residues); consider extending CANON_MAP if frequent.")
         # Extract residue embeddings [L, 512] using built-in helper
         rep = get_encoder_output(model, alphabet, coords)
         # Ensure CPU tensor
@@ -86,9 +142,9 @@ for i, fpath in enumerate(files, 1):
         if AGGREGATE:
             g512 = pool_mean(rep)  # [512]
             globals_512.append(g512.unsqueeze(0))
-            if POOL_STD:
-                g1024 = pool_mean_std(rep)  # [1024]
-                globals_1024.append(g1024.unsqueeze(0))
+        if POOL_STD:
+            g1024 = pool_mean_std(rep)  # [1024]
+            globals_1024.append(g1024.unsqueeze(0))
 
         # Metadata row
         index.append({
@@ -97,23 +153,24 @@ for i, fpath in enumerate(files, 1):
             "L": int(L),
             "out_pt": str(out_pt) if out_pt is not None else None,
         })
-        if i % 20 == 0 or i == len(files):
-            print(f"Processed {i}/{len(files)}")
+        ok_cnt += 1
 
     except Exception as e:
         print(f"[WARN] Skipping {fpath}: {e}")
+        skip_cnt += 1
         continue
 
 # Write aggregated tensors
 if AGGREGATE and globals_512:
     G512 = torch.cat(globals_512, dim=0)  # [N, 512]
     torch.save(G512, EMB_ROOT / "all_global_512.pt")
-    if POOL_STD and globals_1024:
-        G1024 = torch.cat(globals_1024, dim=0)  # [N, 1024]
-        torch.save(G1024, EMB_ROOT / "all_global_1024.pt")
-    print(f"Wrote aggregated tensors to {EMB_ROOT}/")
+if POOL_STD and globals_1024:
+    G1024 = torch.cat(globals_1024, dim=0)  # [N, 1024]
+    torch.save(G1024, EMB_ROOT / "all_global_1024.pt")
+print(f"Wrote aggregated tensors to {EMB_ROOT}/")
 
 # Write index metadata
 with open(EMB_ROOT / "index.json", "w") as f:
     json.dump(index, f, indent=2)
+print(f"Processed OK: {ok_cnt}  |  Skipped: {skip_cnt}  |  Total files: {len(files)}")
 print(f"Wrote index with {len(index)} entries to {EMB_ROOT/'index.json'}")
