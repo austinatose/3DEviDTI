@@ -45,7 +45,8 @@ device = torch.device("cpu")
 model, alphabet = pretrained.esm_if1_gvp4_t16_142M_UR50() ## ESM-IF1
 model = model.to(device).eval()
 
-coords, seq = load_coords("structures/O00418/8GM4_A.cif", chain="A")  # temp
+# coords, seq = load_coords("structures/P39019/5VYC_T1.cif", chain="T1")  # temp
+coords, seq = load_coords("structures/P47901/AF-P47901-F1-model.cif", chain="A") # AF uses A-chain by default
 
 if "X" in seq:
     print(f"[warn] sequence contains 'X' (unknown residues). Consider extending CANON_MAP if frequent.")

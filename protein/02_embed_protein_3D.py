@@ -13,7 +13,7 @@ from esm.inverse_folding.util import load_coords, get_encoder_output
 # Extend Biotite's 3→1 map so load_coords can create a 20‑AA sequence string.
 # Geometry is unchanged; only the 1‑letter code used by the model is normalized.
 try:
-    from biotite.sequence.seqtypes import ProteinSequence
+    from biotite.sequence import ProteinSequence
     _m = ProteinSequence._dict_3to1  # internal map used by convert_letter_3to1
     CANON_MAP = {
         # Canonical explicit
@@ -35,6 +35,43 @@ try:
     }
     for k, v in CANON_MAP.items():
         _m.setdefault(k, v)
+
+    # --- Add user's 3→3 substitutions and derive 3→1 tokens for ESM -------------
+    SUBSTITUTIONS_3TO3 = {
+        '2AS':'ASP', '3AH':'HIS', '5HP':'GLU', 'ACL':'ARG', 'AGM':'ARG', 'AIB':'ALA', 'ALM':'ALA', 'ALO':'THR', 'ALY':'LYS', 'ARM':'ARG',
+        'ASA':'ASP', 'ASB':'ASP', 'ASK':'ASP', 'ASL':'ASP', 'ASQ':'ASP', 'AYA':'ALA', 'BCS':'CYS', 'BHD':'ASP', 'BMT':'THR', 'BNN':'ALA',
+        'BUC':'CYS', 'BUG':'LEU', 'C5C':'CYS', 'C6C':'CYS', 'CAS':'CYS', 'CCS':'CYS', 'CEA':'CYS', 'CGU':'GLU', 'CHG':'ALA', 'CLE':'LEU', 'CME':'CYS',
+        'CSD':'ALA', 'CSO':'CYS', 'CSP':'CYS', 'CSS':'CYS', 'CSW':'CYS', 'CSX':'CYS', 'CXM':'MET', 'CY1':'CYS', 'CY3':'CYS', 'CYG':'CYS',
+        'CYM':'CYS', 'CYQ':'CYS', 'DAH':'PHE', 'DAL':'ALA', 'DAR':'ARG', 'DAS':'ASP', 'DCY':'CYS', 'DGL':'GLU', 'DGN':'GLN', 'DHA':'ALA',
+        'DHI':'HIS', 'DIL':'ILE', 'DIV':'VAL', 'DLE':'LEU', 'DLY':'LYS', 'DNP':'ALA', 'DPN':'PHE', 'DPR':'PRO', 'DSN':'SER', 'DSP':'ASP',
+        'DTH':'THR', 'DTR':'TRP', 'DTY':'TYR', 'DVA':'VAL', 'EFC':'CYS', 'FLA':'ALA', 'FME':'MET', 'GGL':'GLU', 'GL3':'GLY', 'GLZ':'GLY',
+        'GMA':'GLU', 'GSC':'GLY', 'HAC':'ALA', 'HAR':'ARG', 'HIC':'HIS', 'HIP':'HIS', 'HMR':'ARG', 'HPQ':'PHE', 'HTR':'TRP', 'HYP':'PRO',
+        'IAS':'ASP', 'IIL':'ILE', 'IYR':'TYR', 'KCX':'LYS', 'LLP':'LYS', 'LLY':'LYS', 'LTR':'TRP', 'LYM':'LYS', 'LYZ':'LYS', 'MAA':'ALA', 'MEN':'ASN',
+        'MHS':'HIS', 'MIS':'SER', 'MLE':'LEU', 'MPQ':'GLY', 'MSA':'GLY', 'MSE':'MET', 'MVA':'VAL', 'NEM':'HIS', 'NEP':'HIS', 'NLE':'LEU',
+        'NLN':'LEU', 'NLP':'LEU', 'NMC':'GLY', 'OAS':'SER', 'OCS':'CYS', 'OMT':'MET', 'PAQ':'TYR', 'PCA':'GLU', 'PEC':'CYS', 'PHI':'PHE',
+        'PHL':'PHE', 'PR3':'CYS', 'PRR':'ALA', 'PTR':'TYR', 'PYX':'CYS', 'SAC':'SER', 'SAR':'GLY', 'SCH':'CYS', 'SCS':'CYS', 'SCY':'CYS',
+        'SEL':'SER', 'SEP':'SER', 'SET':'SER', 'SHC':'CYS', 'SHR':'LYS', 'SMC':'CYS', 'SOC':'CYS', 'STY':'TYR', 'SVA':'SER', 'TIH':'ALA',
+        'TPL':'TRP', 'TPO':'THR', 'TPQ':'ALA', 'TRG':'LYS', 'TRO':'TRP', 'TYB':'TYR', 'TYI':'TYR', 'TYQ':'TYR', 'TYS':'TYR', 'TYY':'TYR'
+    }
+
+    # Canonical 3-letter → 1-letter mapping for targets
+    _STD_3TO1 = {
+        'ALA':'A','ARG':'R','ASN':'N','ASP':'D','CYS':'C','GLN':'Q','GLU':'E','GLY':'G',
+        'HIS':'H','ILE':'I','LEU':'L','LYS':'K','MET':'M','PHE':'F','PRO':'P','SER':'S',
+        'THR':'T','TRP':'W','TYR':'Y','VAL':'V'
+    }
+
+    # Derive 3→1 entries from the 3→3 table
+    _added_subs = 0
+    for k3, v3 in SUBSTITUTIONS_3TO3.items():
+        v3 = v3.upper()
+        v1 = _STD_3TO1.get(v3)
+        if v1 and k3 not in _m:
+            _m[k3] = v1
+            _added_subs += 1
+    # Optional debug: uncomment to inspect how many entries were added
+    # print(f"[canon] added {_added_subs} entries derived from SUBSTITUTIONS_3TO3")
+    # ---------------------------------------------------------------------------
 except Exception:
     pass
 # -----------------------------------------------------------------------------
@@ -45,7 +82,7 @@ EMB_ROOT = Path("embeddings")                # where to write outputs
 SAVE_PER_FILE = True                          # save per-structure residue embeddings
 AGGREGATE = False                              # write aggregated global embeddings
 DEVICE = torch.device("cpu")                 # keep CPU for stability
-POOL_STD = True                               # include std pooling (for 1024-D)
+POOL_STD = False                               # include std pooling (for 1024-D)
 
 # ------------------------------------------------
 EMB_ROOT.mkdir(parents=True, exist_ok=True)
@@ -96,29 +133,24 @@ globals_1024 = []     # list of 1024-D tensors (mean+std)
 
 for i, fpath in enumerate(tqdm(files), 1):
     try:
-        # Prefer letting util choose chain; if name has _X, try that as a fallback
-        m_chain = re.search(r"_([A-Za-z0-9])\.(?:cif|pdb)$", fpath.name)
-        tried = []
-        last_err = None
-        for attempt in ("named", "A", "X", "AAA"):
-            try:
-                if attempt == "named" and m_chain:
-                    coords, seq = load_coords(str(fpath), chain=m_chain.group(1))
-                elif attempt == "A":
-                    coords, seq = load_coords(str(fpath), chain="A")
-                elif attempt == "X":
-                    coords, seq = load_coords(str(fpath), chain="X")
-                elif attempt == "AAA":
-                    coords, seq = load_coords(str(fpath), chain="AAA")
-                else:
-                    continue
-                break  # success
-            except Exception as e:
-                last_err = e
-                tried.append(attempt)
-                coords = seq = None
-        if coords is None or seq is None:
-            raise RuntimeError(f"load_coords failed (tried {tried}): {last_err}")
+        # Determine output path early and skip if already embedded
+        rel = fpath.relative_to(STRUCT_ROOT)
+        out_pt = EMB_ROOT.joinpath(rel).with_suffix(rel.suffix + ".pt")
+        if out_pt.exists():
+            print(f"[skip] {fpath.name}: embedding already exists → {out_pt}")
+            skip_cnt += 1
+            continue
+
+        # Determine chain based on filename and filetype
+        if fpath.suffix == ".cif" and "AF-" in fpath.name:
+            chain = "A"
+        else:
+            m_chain = re.search(r"_(?P<chain>[A-Za-z0-9]+)\.(?:cif|pdb)$", fpath.name)
+            if m_chain:
+                chain = m_chain.group("chain")
+            else:
+                chain = "A"
+        coords, seq = load_coords(str(fpath), chain=chain)
 
         if "X" in seq:
             print(f"[warn] {fpath.name}: sequence contains 'X' (unknown residues); consider extending CANON_MAP if frequent.")
@@ -130,8 +162,6 @@ for i, fpath in enumerate(tqdm(files), 1):
 
         # Save per-structure embedding mirroring folder structure
         if SAVE_PER_FILE:
-            rel = fpath.relative_to(STRUCT_ROOT)
-            out_pt = EMB_ROOT.joinpath(rel).with_suffix(rel.suffix + ".pt")
             out_pt.parent.mkdir(parents=True, exist_ok=True)
             torch.save(rep, out_pt)
         else:
