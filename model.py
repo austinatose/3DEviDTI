@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from torch_geometric.nn.pool import global_mean_pool as gmp
 
 # device = 'cuda' if torch.cuda.is_available() else 'cpu'
 device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -60,11 +61,11 @@ class Fusion(nn.Module): # get fixed length representations and concat
 
     def forward(self, protein_features, drug_features): # TODO: Think about pooling strategies
         # pooling strategy from evidti
-        # protein_features = torch.mean(protein_features, dim=1)  # mean pooling
+        protein_features = torch.mean(protein_features, dim=1)  # mean pooling
         protein_features = self.protein_linear(protein_features) 
 
         # mean pooling for drugs as recommended by unimol
-        # drug_features = torch.mean(drug_features, dim=1)
+        drug_features = torch.mean(drug_features, dim=1)  # mean pooling
         drug_features = self.drug_fc1(drug_features)
         drug_features = self.drug_fc2(drug_features)
 
@@ -90,7 +91,7 @@ class MLP(nn.Module):
         x = nn.SELU()(self.fc3(x))
         x = self.dropout(x)
         x = self.out(x)
-        x = F.softplus(x) + 1 # !
+        x = F.softplus(x) + 1 # !!
 
         return x
 
@@ -98,16 +99,18 @@ class Model(nn.Module):
     def __init__(self, cfg):
         super(Model, self).__init__()
         self.protein_sa = ProteinSA(cfg["PROTEIN"]["EMBEDDING_DIM"])
-        self.drug_conv = DrugConv(cfg["DRUG"]["EMBEDDING_DIM"], cfg["DRUG"]["DIMS"])
+        self.drug_conv = DrugConv(cfg["DRUG"]["EMBEDDING_DIM"], cfg["DRUG"]["CONV_DIMS"])
         self.cross_attention = CrossAttention(cfg["PROTEIN"]["EMBEDDING_DIM"])
-        self.fusion = Fusion(cfg["DRUG"]["EMBEDDING_DIM"], cfg["DRUG"]["DIMS"], cfg["PROTEIN"]["EMBEDDING_DIM"], cfg["PROTEIN"]["DIMS"])
+        self.fusion = Fusion(cfg["DRUG"]["EMBEDDING_DIM"], cfg["DRUG"]["MLP_DIMS"], cfg["PROTEIN"]["EMBEDDING_DIM"], cfg["PROTEIN"]["DIMS"])
         self.mlp = MLP(cfg["MLP"]["INPUT_DIM"], cfg["MLP"]["DIMS"])
 
     def forward(self, protein_emb, drug_emb, mode="train"):
         # i should be able to easily turn off SA and the drug CNN
         # input is (B, L, D)
         protein_features = self.protein_sa(protein_emb)
-        drug_features = self.drug_conv(drug_emb)
+
+        # drug_features = self.drug_conv(drug_emb)
+        drug_features = drug_emb  # (B, L, D)
         # Both (B, L, D)
         attended_protein_features, attended_drug_features = self.cross_attention(protein_features, drug_features)
         fused_features = self.fusion(attended_protein_features, attended_drug_features)
@@ -115,3 +118,75 @@ class Model(nn.Module):
         output = self.mlp(fused_features)
 
         return output
+
+
+
+
+# -------------------------
+# Sanity checks
+# -------------------------
+
+def _test_fusion_module():
+    torch.manual_seed(42)
+    device_local = device
+
+    B = 2
+    Lp = 300   # protein residues
+    Ld = 60    # drug atoms/tokens
+    D  = 512
+
+    # Random token features (simulate post-CA tokens)
+    protein_tokens = torch.randn(B, Lp, D, device=device_local, requires_grad=True)
+    drug_tokens    = torch.randn(B, Ld, D, device=device_local, requires_grad=True)
+
+    # Instantiate Fusion with your current config choices
+    fusion = Fusion(
+        drug_embed_dim=D,
+        drug_hidden_dims=[1024, 256],
+        protein_embed_dim=D,
+        protein_hidden_dims=[256],
+        dropout_rate=0.1
+    ).to(device_local)
+    fusion.train()
+
+    # Forward
+    fused = fusion(protein_tokens, drug_tokens)  # expect [B, 512]
+    print("[Fusion] output shape:", tuple(fused.shape))
+
+    # Shape check
+    assert fused.shape == (B, 512), f"Expected (B,512) got {tuple(fused.shape)}"
+
+    # Simple gradient check
+    loss = fused.pow(2).mean()
+    loss.backward()
+
+    # Ensure gradients exist on a representative parameter
+    has_grad = any(p.requires_grad and p.grad is not None for p in fusion.parameters())
+    assert has_grad, "No gradients flowed through Fusion parameters."
+    print("[Fusion] gradients ok.")
+
+def _smoke_test():
+    from config.cfg import get_cfg_defaults
+    cfg = get_cfg_defaults()
+
+    model = Model(cfg).to(device)
+    model.eval()
+
+    B = 32
+    Lp = 256
+    Ld = 48
+    Dp = cfg.PROTEIN.EMBEDDING_DIM
+    Dd = cfg.DRUG.EMBEDDING_DIM
+
+    # Random embeddings (simulate ESM-IF1 and UniMol outputs)
+    protein_emb = torch.randn(B, Lp, Dp, device=device)
+    drug_emb = torch.randn(B, Ld, Dd, device=device)
+
+    with torch.no_grad():
+        out = model(protein_emb, drug_emb)
+        print(out)
+    print("[Model smoke test] Forward pass successful. Output shape:", tuple(out.shape))
+
+if __name__ == "__main__":
+    _test_fusion_module()
+    _smoke_test()
