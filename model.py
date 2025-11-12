@@ -10,16 +10,10 @@ device = torch.device("mps") if torch.backends.mps.is_available() else torch.dev
 class ProteinSA(nn.Module): # is this too slow? is ESM-IF1 already contextualised? can always remove this if necessary
     def __init__(self, embed_dim, num_heads=8, dropout_rate=0.1):
         super(ProteinSA, self).__init__()
-        self.query = nn.Linear(embed_dim, embed_dim)
-        self.key = nn.Linear(embed_dim, embed_dim)
-        self.value = nn.Linear(embed_dim, embed_dim)
         self.multiheadattention = nn.MultiheadAttention(embed_dim, num_heads, dropout=dropout_rate, batch_first=True)
 
     def forward(self, x, mask=None):
-        Q = self.query(x)
-        K = self.key(x)
-        V = self.value(x)
-        output, _ = self.multiheadattention(Q, K, V, key_padding_mask=mask)
+        output, _ = self.multiheadattention(x, x, x, key_padding_mask=mask)
         return output
 
 class DrugConv(nn.Module): # can afford to be cheap on drug side because UniMol is quite comprehensive
@@ -98,12 +92,11 @@ class MLP(nn.Module):
 class Model(nn.Module):
     def __init__(self, cfg):
         super(Model, self).__init__()
-        self.protein_sa = ProteinSA(cfg["PROTEIN"]["EMBEDDING_DIM"])
-        self.drug_conv = DrugConv(cfg["DRUG"]["EMBEDDING_DIM"], cfg["DRUG"]["CONV_DIMS"])
-        self.cross_attention = CrossAttention(cfg["PROTEIN"]["EMBEDDING_DIM"])
-        self.fusion = Fusion(cfg["DRUG"]["EMBEDDING_DIM"], cfg["DRUG"]["MLP_DIMS"], cfg["PROTEIN"]["EMBEDDING_DIM"], cfg["PROTEIN"]["DIMS"])
-        self.mlp = MLP(cfg["MLP"]["INPUT_DIM"], cfg["MLP"]["DIMS"])
-
+        self.protein_sa = ProteinSA(cfg.PROTEIN.EMBEDDING_DIM)
+        self.drug_conv = DrugConv(cfg.DRUG.EMBEDDING_DIM, cfg.DRUG.CONV_DIMS)
+        self.cross_attention = CrossAttention(cfg.PROTEIN.EMBEDDING_DIM)
+        self.fusion = Fusion(cfg.DRUG.EMBEDDING_DIM, cfg.DRUG.MLP_DIMS, cfg.PROTEIN.EMBEDDING_DIM, cfg.PROTEIN.DIMS)
+        self.mlp = MLP(cfg.MLP.INPUT_DIM, cfg.MLP.DIMS)
     def forward(self, protein_emb, drug_emb, mode="train"):
         # i should be able to easily turn off SA and the drug CNN
         # input is (B, L, D)
@@ -187,6 +180,30 @@ def _smoke_test():
         print(out)
     print("[Model smoke test] Forward pass successful. Output shape:", tuple(out.shape))
 
+def _test_model_forward():
+    import torch
+    from torch.utils.data import DataLoader
+    from main import MyDataset  # change this import path
+    from main import collate_fn
+    from config.cfg import get_cfg_defaults
+    cfg = get_cfg_defaults()
+
+    model = Model(cfg).to(device)
+    model.eval()
+
+    ds = MyDataset(cfg.DATA.TRAIN_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
+    dl = DataLoader(ds, batch_size=cfg.SOLVER.BATCH_SIZE, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=True)
+
+    B = cfg.SOLVER.BATCH_SIZE
+
+    s = next(iter(dl))
+
+    with torch.no_grad():
+        out = model(s["protein_emb"].to(device), s["drug_emb"].to(device))
+        print(out)
+    print("[Model forward test] Forward pass successful. Output shape:", tuple(out.shape))
+
 if __name__ == "__main__":
     _test_fusion_module()
     _smoke_test()
+    _test_model_forward()
