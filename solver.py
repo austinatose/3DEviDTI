@@ -233,19 +233,19 @@ class Solver:
     # Additional methods for training, validation, testing would go here
 
 if __name__ == "__main__":
-    # cfg = get_cfg_defaults()
-    # model = Model(cfg)
-    # device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # solver = Solver(model, cfg, device=device,
-    #                 optim=torch.optim.Adam, loss_fn=dirichlet_loss, eval=None)
+    cfg = get_cfg_defaults()
+    model = Model(cfg)
+    device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    solver = Solver(model, cfg, device=device,
+                    optim=torch.optim.Adam, loss_fn=dirichlet_loss, eval=None)
 
-    # solver.train(solver.train_dl, solver.val_dl)
+    solver.train(solver.train_dl, solver.val_dl)
 
     # dirichlet loss test   
-    B = 4
-    K = 2
-    alpha = torch.tensor([[1.5, 1.5], [1.6, 1.5], [1.6, 1.7] ,[1.2, 1.3]])
-    print("Alpha:", alpha)
-    labels = torch.tensor([0, 0, 0, 0])
-    loss = dirichlet_loss(alpha, labels, lam=0.1)
-    print("Dirichlet loss test:", loss.item())
+    # B = 4
+    # K = 2
+    # alpha = torch.tensor([[1.5, 1.5], [1.6, 1.5], [1.6, 1.7] ,[1.2, 1.3]])
+    # print("Alpha:", alpha)
+    # labels = torch.tensor([0, 0, 0, 0])
+    # loss = dirichlet_loss(alpha, labels, lam=0.1)
+    # print("Dirichlet loss test:", loss.item())
