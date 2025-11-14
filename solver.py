@@ -122,12 +122,17 @@ class Solver:
             protein_emb = batch["protein_emb"].to(self.device)  # [batchsize, Lpmax, Dp]
             drug_emb = batch["drug_emb"].to(self.device)  # [batchsize, Ldmax, Dd]
 
+            # old_params = []
+            # for p in model.parameters():
+            #     old_params.append(p.detach().clone())
+
             # padding is done
             # sequence_lengths = metadata['length'][:, None].to(self.device)  # [batchsize, 1]
             # max_len = sequence_lengths.max().item()
 
             predictions = self.model(protein_emb, drug_emb, protein_mask=protein_mask, drug_mask=drug_mask, mode="train")  # [batchsize, 2]
             # print("Predictions:", predictions)
+            # print("Labels:", labels)
 
             # 0 is negative, 1 is positive. take larger logit as pred
             _, pred = torch.max(predictions, dim=1)  # [batchsize]
@@ -138,13 +143,18 @@ class Solver:
             results.append(torch.stack([labels.detach().cpu(), pred.detach().cpu()], dim=1).numpy())  # [batchsize, 2]
 
             if optim:  # run backpropagation if an optimizer is provided
+                self.optim.zero_grad()
                 loss.backward()
                 self.optim.step()
-                self.optim.zero_grad()
+            
+            # diff = 0.0
+            # for p, old in zip(model.parameters(), old_params):
+            #     diff += (p - old).abs().sum().item()
+            # print("Total parameter change:", diff)
 
             running_loss += loss.item()
 
-            if i % 3 == 0:  # log every log_iterations
+            if i % 10 == 0:  # log every log_iterations
                 if epoch:
                     # get pred from alphas
                     print('Epoch %d ' % (epoch), end=' ')
@@ -228,7 +238,7 @@ class Solver:
                 val_mcc = matthews_corrcoef(val_results[:, 1], val_results[:, 0])
                 val_auc = roc_auc_score(val_results[:, 1], prob_list)
 
-            print('[Epoch %d] val accuracy: %.4f%% train accuracy: %.4f%%' % (epoch + 1, val_acc, train_acc))
+            print('[Epoch %d] val accuracy: %.4f%% train accuracy: %.4f%% train loss: %.4f' % (epoch + 1, val_acc, train_acc, train_loss))
 
         # TODO: whole bunch incomplete
 
@@ -250,10 +260,14 @@ if __name__ == "__main__":
     solver.train(solver.train_dl, solver.val_dl)
 
     # dirichlet loss test   
-    # B = 4
-    # K = 2
+    B = 4
+    K = 2
     # alpha = torch.tensor([[1600000, 1.5], [1.6, 1.5], [1.8, 1.7] ,[1.4, 1.3]])
     # print("Alpha:", alpha)
-    # labels = torch.tensor([0, 0, 0, 0])
-    # loss = dirichlet_loss(alpha, labels, lam=0.1)
+    # labels = torch.tensor([0, 0, 1, 0])
+    # loss = F.cross_entropy(torch.tensor([[1600000, 1.5], [1.6, 1.5], [1.8, 1.7] ,[1.4, 1.3]]), labels)
     # print("Dirichlet loss test:", loss.item())
+
+    # print("labels shape:", labels.shape)
+    # print("labels dtype:", labels.dtype)
+    # print("labels unique:", labels.unique())
