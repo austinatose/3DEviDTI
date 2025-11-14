@@ -143,9 +143,13 @@ class Solver:
             results.append(torch.stack([labels.detach().cpu(), pred.detach().cpu()], dim=1).numpy())  # [batchsize, 2]
 
             if optim:  # run backpropagation if an optimizer is provided
-                self.optim.zero_grad()
                 loss.backward()
+                # for name, p in model.named_parameters():
+                #     if p.grad is not None:
+                #         print("grad norm", name, p.grad.norm().item())
+                #         break
                 self.optim.step()
+                optim.zero_grad()
             
             # diff = 0.0
             # for p, old in zip(model.parameters(), old_params):
