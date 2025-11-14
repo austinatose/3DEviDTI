@@ -104,8 +104,8 @@ class Solver:
         ev_list = []        # evidence = alpha - 1
         bk_list = []        # belief = (alpha - 1) / sum(alpha)
         label_list = []
-        protein_ids = []
-        drug_ids = []
+        uniprot_ids = []
+        drugbank_ids = []
 
         for _, batch in enumerate(data_loader):
             labels = batch["label"].to(self.device)                    # (B,)
@@ -143,11 +143,11 @@ class Solver:
                 ev_list.append(evidence[i])
                 bk_list.append(belief[i])
 
-            protein_ids.extend(batch["protein_id"])                     # list[str]
-            drug_ids.extend(batch["drug_id"])                           # list[str]
+            uniprot_ids.extend(batch["uniprot_id"])                     # list[str]
+            drugbank_ids.extend(batch["drugbank_id"])                           # list[str]
 
         pred_pairs = np.vstack(pred_pairs) if len(pred_pairs) else np.zeros((0,2), dtype=int)
-        return protein_ids, drug_ids, pred_pairs, conf_list, conf_list, prob_list, ev_list, bk_list
+        return uniprot_ids, drugbank_ids, pred_pairs, conf_list, conf_list, prob_list, ev_list, bk_list
 
     def train(self, train_loader, val_loader):
         no_improve_epochs = 0 # TODO
