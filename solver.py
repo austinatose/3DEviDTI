@@ -168,7 +168,6 @@ class Solver:
         running_loss /= len(data_loader)
         return running_loss, np.concatenate(results, axis=0)  # [N, 2]
     
-    @torch.no_grad()
     def predict_test(self, data_loader):  # evaluation-time, evidential outputs
         self.model.eval()
         pred_pairs = []     # [pred, label]
@@ -243,6 +242,7 @@ class Solver:
                 val_auc = roc_auc_score(val_results[:, 1], prob_list)
 
             print('[Epoch %d] val accuracy: %.4f%% train accuracy: %.4f%% train loss: %.4f' % (epoch + 1, val_acc, train_acc, train_loss))
+            self.save_model(epoch + 1)
 
         # TODO: whole bunch incomplete
 
@@ -250,8 +250,15 @@ class Solver:
     def evaluate(self, data_loader):
         pass
 
-    def save_model(self, path):
-        torch.save(self.model.state_dict(), path)
+    def save_model(self, epoch, dir="saved"):
+        os
+        ckpt = {
+            'epoch': epoch,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optim.state_dict(),
+            'cfg': self.cfg
+        }
+        torch.save(ckpt, os.path.join(dir, f"model_epoch_{epoch}.pt"))
     # Additional methods for training, validation, testing would go here
 
 if __name__ == "__main__":
