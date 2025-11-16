@@ -108,6 +108,7 @@ class Solver:
         self.val_dl = DataLoader(self.val_ds, batch_size=cfg.SOLVER.BATCH_SIZE, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=False)
 
         self.loss_fn = dirichlet_loss if loss_fn == "dirichlet_loss" else F.cross_entropy
+        self.start_date = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
         print(f"Using loss function: {self.loss_fn.__name__}")
 
         print("Solver initialized.")
@@ -226,12 +227,18 @@ class Solver:
         no_improve_epochs = 0 # TODO
         for epoch in range(self.epochs):
             print(f"\n=== Epoch {epoch + 1}/{self.epochs} ===")
+            epoch_start_time = pd.Timestamp.now()
             self.model.train()
             train_loss, train_results = self.predict(train_loader, epoch + 1, optim=self.optim)
             self.model.eval()
 
             with torch.no_grad():
                 _, _, val_results, _, _, prob_list, _, _ = self.predict_test(val_loader)
+
+            TN = confusion_matrix(val_results[:, 1], val_results[:, 0])[0, 0]
+            FP = confusion_matrix(val_results[:, 1], val_results[:, 0])[0, 1]
+            FN = confusion_matrix(val_results[:, 1], val_results[:, 0])[1, 0]
+            TP = confusion_matrix(val_results[:, 1], val_results[:, 0])[1, 1]
 
             val_results = np.squeeze(np.array(val_results))  # [N, 2]
             train_acc = 100 * np.equal(train_results[:, 0], train_results[:, 1]).sum() / len(train_results)
@@ -245,6 +252,16 @@ class Solver:
             print('[Epoch %d] val accuracy: %.4f%% train accuracy: %.4f%% train loss: %.4f' % (epoch + 1, val_acc, train_acc, train_loss))
             if epoch % 10 == 0:
                 self.save_model(epoch + 1)
+
+            # create new file with current date and time if not exist
+            date = self.start_date
+            epoch_time = (pd.Timestamp.now() - epoch_start_time).total_seconds()
+            print(f"Epoch time: {epoch_time:.2f} seconds")
+            if not os.path.exists(os.path.join("logs", f"training_log_{date}.csv")):
+                with open(os.path.join("logs", f"training_log_{date}.csv"), "w") as f:
+                    f.write("Epoch,Train Loss,Train Acc,Val Acc,Train MCC,Val MCC,Val AUC,TP,TN,FP,FN,Epoch Time (s)\n")
+            with open(os.path.join("logs", f"training_log_{date}.csv"), "a") as f:
+                f.write(f"{epoch+1},{train_loss:.6f},{train_acc:.4f},{val_acc:.4f},{train_mcc:.4f},{val_mcc:.4f},{val_auc:.4f},{TP},{TN},{FP},{FN},{epoch_time:.2f}\n")
         
         self.evaluate(self.test_dl)
 
