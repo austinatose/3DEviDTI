@@ -105,6 +105,28 @@ class Fusion(nn.Module): # get fixed length representations and concat
         res = torch.cat((protein_features, drug_features), dim=-1)
         return res
 
+# class MLP(nn.Module):
+#     def __init__(self, input_dim, hidden_dims, dropout_rate=0.2):
+#         super(MLP, self).__init__()
+#         self.fc1 = nn.Linear(input_dim, hidden_dims[0])
+#         self.fc2 = nn.Linear(hidden_dims[0], hidden_dims[1])
+#         self.fc3 = nn.Linear(hidden_dims[1], hidden_dims[2])
+#         self.out = nn.Linear(hidden_dims[2], hidden_dims[3])
+#         # self.dropout = nn.Dropout(dropout_rate)
+#         self.dropout = nn.AlphaDropout(dropout_rate)
+
+#     def forward(self, x):
+#         x = nn.SELU()(self.fc1(x))
+#         x = self.dropout(x)
+#         x = nn.SELU()(self.fc2(x))
+#         x = self.dropout(x)
+#         x = nn.SELU()(self.fc3(x))
+#         x = self.dropout(x)
+#         x = self.out(x)
+#         # x = F.softplus(x) + 1 # !!
+
+#         return x
+
 class MLP(nn.Module):
     def __init__(self, input_dim, hidden_dims, dropout_rate=0.2):
         super(MLP, self).__init__()
@@ -112,19 +134,17 @@ class MLP(nn.Module):
         self.fc2 = nn.Linear(hidden_dims[0], hidden_dims[1])
         self.fc3 = nn.Linear(hidden_dims[1], hidden_dims[2])
         self.out = nn.Linear(hidden_dims[2], hidden_dims[3])
-        # self.dropout = nn.Dropout(dropout_rate)
-        self.dropout = nn.AlphaDropout(dropout_rate)
+        self.dropout = nn.Dropout(dropout_rate)
+        self.activation = nn.ReLU()
 
     def forward(self, x):
-        x = nn.SELU()(self.fc1(x))
+        x = self.activation(self.fc1(x))
         x = self.dropout(x)
-        x = nn.SELU()(self.fc2(x))
+        x = self.activation(self.fc2(x))
         x = self.dropout(x)
-        x = nn.SELU()(self.fc3(x))
+        x = self.activation(self.fc3(x))
         x = self.dropout(x)
         x = self.out(x)
-        # x = F.softplus(x) + 1 # !!
-
         return x
 
 class Model(nn.Module):
@@ -142,7 +162,7 @@ class Model(nn.Module):
         # protein_features = protein_emb  # (B, L, D)
 
         drug_features = self.drug_conv(drug_emb)
-        drug_features = drug_emb  # (B, L, D)
+        # drug_features = drug_emb  # (B, L, D)
         # Both (B, L, D)
         attended_protein_features, attended_drug_features = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask)
         fused_features = self.fusion(attended_protein_features, attended_drug_features, protein_mask=protein_mask, drug_mask=drug_mask)
