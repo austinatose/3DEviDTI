@@ -139,6 +139,10 @@ class Solver:
             # 0 is negative, 1 is positive. take larger logit as pred
             _, pred = torch.max(predictions, dim=1)  # [batchsize]
 
+            # if all predictions are the same, something's wrong
+            if (pred == pred[0]).all():
+                print("爆炸了: all predictions are the same in this batch")
+
             loss = self.loss_fn(predictions, labels) 
             # loss = F.cross_entropy(predictions, labels)
 
