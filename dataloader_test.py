@@ -37,3 +37,14 @@ for i, batch in enumerate(dl):
             print(f"  {k}: {tuple(v.shape)}, dtype={v.dtype}")
     if i == 5:
         break
+
+import random
+
+for i in random.sample(range(len(ds)), 5):
+    item = ds[i]
+    print("idx:", i)
+    print("  protein_id:", item["uniprot_id"])
+    print("  drug_id:", item["drugbank_id"])
+    print("  label:", item["label"])
+    print("  protein_emb shape:", item["protein_emb"].shape)
+    print("  drug_emb shape:", item["drug_emb"].shape)

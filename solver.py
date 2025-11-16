@@ -187,7 +187,7 @@ class Solver:
             drug_mask = batch["drug_mask"].to(self.device)             # (B, Ld)
             protein_emb = batch["protein_emb"].to(self.device)         # (B, Lp, Dp)
             drug_emb = batch["drug_emb"].to(self.device)               # (B, Ld, Dd)
-
+            # FIXME for CE
             # Model outputs Dirichlet alphas (>=1) of shape (B, 2)
             alphas = self.model(protein_emb, drug_emb,
                                  protein_mask=protein_mask,
