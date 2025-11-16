@@ -5,7 +5,7 @@ import pandas as pd
 import os
 import torch
 
-CSV_PATH = "lists/pairs_filtered_new.csv"
+CSV_PATH = "lists/pairs_filtered_newer.csv"
 DRUG_EMB_DIR = "drug/embeddings_atomic"
 PROTEIN_EMB_DIR = "embeddings"
 
@@ -23,5 +23,5 @@ for _, row in df.iterrows():
         filtered_pairs.append((drug_id, protein_id))
 
 filtered_df = pd.DataFrame(filtered_pairs, columns=['drugbank_id', 'uniprot_id'])
-filtered_df.to_csv("lists/pairs_valid.csv", index=False)
-print(f"Filtered pairs saved to lists/pairs_valid.csv with {len(filtered_pairs)} pairs.")
+filtered_df.to_csv("lists/pairs_valid_cleaner.csv", index=False)
+print(f"Filtered pairs saved to lists/pairs_valid_cleaner.csv with {len(filtered_pairs)} pairs.")

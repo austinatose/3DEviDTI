@@ -4,11 +4,11 @@ import random
 import hashlib
 from pathlib import Path
 
-PAIRS_CSV = "lists/only_pdb_pairs.csv"
-OUTPUT_CSV = "lists/pdb_final.csv"
-TRAIN_CSV = "lists/pdb_train.csv"
-VAL_CSV   = "lists/pdb_val.csv"
-TEST_CSV  = "lists/pdb_test.csv"
+PAIRS_CSV = "lists/only_clean_pairs.csv"
+OUTPUT_CSV = "lists/clean_final.csv"
+TRAIN_CSV = "lists/clean_train.csv"
+VAL_CSV   = "lists/clean_val.csv"
+TEST_CSV  = "lists/clean_test.csv"
 
 with open(PAIRS_CSV, "rb") as f:
     print(hashlib.md5(f.read()).hexdigest())

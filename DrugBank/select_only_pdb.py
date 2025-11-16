@@ -2,8 +2,8 @@ import pandas as pd
 import os
 import glob
 
-INPUT_CSV = "lists/pairs_valid.csv"
-OUTPUT_CSV = "lists/only_pdb_pairs.csv"
+INPUT_CSV = "lists/pairs_valid_cleaner.csv"
+OUTPUT_CSV = "lists/only_clean_pairs.csv"
 PROTEIN_EMB_DIR = "embeddings"
 
 df = pd.read_csv(INPUT_CSV)
