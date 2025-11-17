@@ -47,11 +47,33 @@ class CrossAttention(nn.Module): # refer to CAT-DTI
         super(CrossAttention, self).__init__()
         self.CAp = nn.MultiheadAttention(embed_dim, num_heads, dropout=dropout_rate, batch_first=True)
         self.CAd = nn.MultiheadAttention(embed_dim, num_heads, dropout=dropout_rate, batch_first=True)
+        ff_dim = embed_dim * 4
+        self.ln_p1 = nn.LayerNorm(embed_dim)
+        self.ln_p2 = nn.LayerNorm(embed_dim)
+        self.ln_d1 = nn.LayerNorm(embed_dim)
+        self.ln_d2 = nn.LayerNorm(embed_dim)
+        self.ff_p = nn.Sequential(
+            nn.Linear(embed_dim, ff_dim),
+            nn.ReLU(),
+            nn.Linear(ff_dim, embed_dim),
+        )
+        self.ff_d = nn.Sequential(
+            nn.Linear(embed_dim, ff_dim),
+            nn.ReLU(),
+            nn.Linear(ff_dim, embed_dim),
+        )
+        self.dropout = nn.Dropout(dropout_rate)
 
     def forward(self, protein_features, drug_features, protein_mask=None, drug_mask=None):
-        attended_protein_features, attentionp = self.CAp(protein_features, drug_features, drug_features, key_padding_mask=drug_mask)
-        attended_drug_features, attentiond = self.CAd(drug_features, protein_features, protein_features, key_padding_mask=protein_mask)
-        return attended_protein_features, attended_drug_features
+        attended_protein_features, attentionp = self.CAp(self.ln_p1(protein_features), drug_features, drug_features, key_padding_mask=drug_mask)
+        protein_features = protein_features + self.dropout(attended_protein_features)
+        protein_features = protein_features + self.dropout(self.ff_p(self.ln_p2(protein_features)))
+
+        attended_drug_features, attentiond = self.CAd(self.ln_d1(drug_features), protein_features, protein_features, key_padding_mask=protein_mask)
+        drug_features = drug_features + self.dropout(attended_drug_features)
+        drug_features = drug_features + self.dropout(self.ff_d(self.ln_d2(drug_features)))
+
+        return protein_features, drug_features
 
 class Fusion(nn.Module): # get fixed length representations and concat
     def __init__(self, drug_embed_dim, drug_hidden_dims, protein_embed_dim, protein_hidden_dims, dropout_rate=0.2):
@@ -101,6 +123,7 @@ class Fusion(nn.Module): # get fixed length representations and concat
 
         drug_features = self.drug_fc1(drug_features)
         drug_features = self.drug_fc2(drug_features)
+        
         # now both drug and protein features are of same dimension of 256
         res = torch.cat((protein_features, drug_features), dim=-1)
         return res
