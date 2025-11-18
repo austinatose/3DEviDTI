@@ -142,9 +142,9 @@ class Solver:
             # print("preds:", predictions[:5].argmax(dim=1))
             # print("labels:", labels[:5])
 
-            # if all predictions are the same, something's wrong
-            if (pred == pred[0]).all():
-                print("爆炸了: all predictions are the same in this batch")
+            # # if all predictions are the same, something's wrong
+            # if (pred == pred[0]).all():
+            #     print("爆炸了: all predictions are the same in this batch")
 
             loss = self.loss_fn(predictions, labels) 
             # loss = F.cross_entropy(predictions, labels)
@@ -175,7 +175,7 @@ class Solver:
 
             running_loss += loss.item()
 
-            if i % 10 == 0:  # log every log_iterations
+            if i % 100 == 0:  # log every log_iterations
                 if epoch:
                     # get pred from alphas
                     print('Epoch %d ' % (epoch), end=' ')

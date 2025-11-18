@@ -242,13 +242,13 @@ class Model(nn.Module):
     def forward(self, protein_emb, drug_emb, protein_mask=None, drug_mask=None, mode="train"):
         # i should be able to easily turn off SA and the drug CNN
         # input is (B, L, D)
-        # protein_features = self.protein_sa(protein_emb, mask=protein_mask)
-        protein_features = protein_emb  # (B, L, D)
+        protein_features = self.protein_sa(protein_emb, mask=protein_mask)
+        # protein_features = protein_emb  # (B, L, D)
 
-        # drug_features = self.drug_conv(drug_emb)
-        drug_features = drug_emb  # (B, L, D)
+        drug_features = self.drug_conv(drug_emb)
+        # drug_features = drug_emb  # (B, L, D)
         # Both (B, L, D)
-        attended_protein_features, attended_drug_features = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask)
+        # attended_protein_features, attended_drug_features = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask)
         # attended_protein_features = protein_features
         # attended_drug_features = drug_features
         fused_features = self.fusion(attended_protein_features, attended_drug_features, protein_mask=protein_mask, drug_mask=drug_mask)
