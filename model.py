@@ -74,6 +74,17 @@ class CrossAttention(nn.Module): # refer to CAT-DTI
         drug_features = drug_features + self.dropout(self.ff_d(self.ln_d2(drug_features)))
 
         return protein_features, drug_features
+    
+class CrossAttentionOld(nn.Module): # refer to CAT-DTI
+    def __init__(self, embed_dim, num_heads=8, dropout_rate=0.1):
+        super(CrossAttentionOld, self).__init__()
+        self.CAp = nn.MultiheadAttention(embed_dim, num_heads, dropout=dropout_rate, batch_first=True)
+        self.CAd = nn.MultiheadAttention(embed_dim, num_heads, dropout=dropout_rate, batch_first=True)
+
+    def forward(self, protein_features, drug_features, protein_mask=None, drug_mask=None):
+        attended_protein_features, attentionp = self.CAp(protein_features, drug_features, drug_features, key_padding_mask=drug_mask)
+        attended_drug_features, attentiond = self.CAd(drug_features, protein_features, protein_features, key_padding_mask=protein_mask)
+        return protein_features, drug_features
 
 class Fusion(nn.Module): # get fixed length representations and concat
     def __init__(self, drug_embed_dim, drug_hidden_dims, protein_embed_dim, protein_hidden_dims, dropout_rate=0.2):
