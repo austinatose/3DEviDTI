@@ -138,6 +138,9 @@ class Solver:
 
             # 0 is negative, 1 is positive. take larger logit as pred
             _, pred = torch.max(predictions, dim=1)  # [batchsize]
+            # print("logits:", predictions[:5])
+            # print("preds:", predictions[:5].argmax(dim=1))
+            # print("labels:", labels[:5])
 
             # if all predictions are the same, something's wrong
             if (pred == pred[0]).all():
@@ -156,6 +159,14 @@ class Solver:
                 #         break
                 self.optim.step()
                 optim.zero_grad()
+
+            # for name, param in model.named_parameters():
+            #     if param.grad is not None:
+            #         grad_mean = param.grad.abs().mean()
+            #         if grad_mean == 0:
+            #             print(f"Zero gradients in {name}")
+            #         elif torch.isnan(param.grad).any():
+            #             print(f"NaN gradients in {name}")
             
             # diff = 0.0
             # for p, old in zip(model.parameters(), old_params):

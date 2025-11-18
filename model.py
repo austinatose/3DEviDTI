@@ -238,7 +238,7 @@ class Model(nn.Module):
         self.drug_conv = DrugConv(cfg.DRUG.EMBEDDING_DIM, cfg.DRUG.CONV_DIMS)
         self.cross_attention = CrossAttention(cfg.PROTEIN.EMBEDDING_DIM, dropout_rate=cfg.SOLVER.DROPOUT)
         self.fusion = Fusion(cfg.DRUG.EMBEDDING_DIM, cfg.DRUG.MLP_DIMS, cfg.PROTEIN.EMBEDDING_DIM, cfg.PROTEIN.DIMS, cfg.SOLVER.DROPOUT)
-        self.mlp = MLP1(cfg.MLP.INPUT_DIM, cfg.MLP.DIMS, cfg.SOLVER.DROPOUT)
+        self.mlp = MLP2(cfg.MLP.INPUT_DIM, cfg.MLP.DIMS, cfg.SOLVER.DROPOUT)
     def forward(self, protein_emb, drug_emb, protein_mask=None, drug_mask=None, mode="train"):
         # i should be able to easily turn off SA and the drug CNN
         # input is (B, L, D)
@@ -248,9 +248,9 @@ class Model(nn.Module):
         # drug_features = self.drug_conv(drug_emb)
         drug_features = drug_emb  # (B, L, D)
         # Both (B, L, D)
-        # attended_protein_features, attended_drug_features = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask)
-        attended_protein_features = protein_features
-        attended_drug_features = drug_features
+        attended_protein_features, attended_drug_features = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask)
+        # attended_protein_features = protein_features
+        # attended_drug_features = drug_features
         fused_features = self.fusion(attended_protein_features, attended_drug_features, protein_mask=protein_mask, drug_mask=drug_mask)
         # at this point, shape of (B, D)
         output = self.mlp(fused_features)
@@ -290,6 +290,7 @@ def _test_masks():
     print("[_test_masks] drug lengths:", drug_lens.tolist())
     print("[_test_masks] drug mask (True = PAD):")
     print(drug_mask.cpu().numpy())
+    print(~drug_mask)
 
     # Random token embeddings
     protein_emb = torch.randn(B, Lp_max, D, device=device_local, requires_grad=True)
