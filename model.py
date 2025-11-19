@@ -15,6 +15,8 @@ class ProteinSA(nn.Module): # is this too slow? is ESM-IF1 already contextualise
     def forward(self, x, mask=None):
         output, _ = self.multiheadattention(x, x, x, key_padding_mask=mask)
         return output
+    
+## FFN here?
 
 # class DrugConv(nn.Module): # can afford to be cheap on drug side because UniMol is quite comprehensive
 #     def __init__(self, input_dim, hidden_dims, dropout_rate=0.1):
@@ -223,11 +225,11 @@ class MLP2(nn.Module):
 
     def forward(self, x):
         x = self.activation(self.fc1(x))
-        # x = self.dropout(x)
+        x = self.dropout(x)
         x = self.activation(self.fc2(x))
-        # x = self.dropout(x)
+        x = self.dropout(x)
         x = self.activation(self.fc3(x))
-        # x = self.dropout(x)
+        x = self.dropout(x)
         x = self.out(x)
         return x
 
@@ -236,19 +238,19 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.protein_sa = ProteinSA(cfg.PROTEIN.EMBEDDING_DIM)
         self.drug_conv = DrugConv(cfg.DRUG.EMBEDDING_DIM, cfg.DRUG.CONV_DIMS)
-        self.cross_attention = CrossAttention(cfg.PROTEIN.EMBEDDING_DIM, dropout_rate=cfg.SOLVER.DROPOUT)
+        self.cross_attention = CrossAttentionOld(cfg.PROTEIN.EMBEDDING_DIM, dropout_rate=cfg.SOLVER.DROPOUT)
         self.fusion = Fusion(cfg.DRUG.EMBEDDING_DIM, cfg.DRUG.MLP_DIMS, cfg.PROTEIN.EMBEDDING_DIM, cfg.PROTEIN.DIMS, cfg.SOLVER.DROPOUT)
         self.mlp = MLP2(cfg.MLP.INPUT_DIM, cfg.MLP.DIMS, cfg.SOLVER.DROPOUT)
     def forward(self, protein_emb, drug_emb, protein_mask=None, drug_mask=None, mode="train"):
         # i should be able to easily turn off SA and the drug CNN
         # input is (B, L, D)
-        protein_features = self.protein_sa(protein_emb, mask=protein_mask)
-        # protein_features = protein_emb  # (B, L, D)
+        # protein_features = self.protein_sa(protein_emb, mask=protein_mask)
+        protein_features = protein_emb  # (B, L, D)
 
-        drug_features = self.drug_conv(drug_emb)
-        # drug_features = drug_emb  # (B, L, D)
+        # drug_features = self.drug_conv(drug_emb)
+        drug_features = drug_emb  # (B, L, D)
         # Both (B, L, D)
-        # attended_protein_features, attended_drug_features = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask)
+        attended_protein_features, attended_drug_features = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask)
         # attended_protein_features = protein_features
         # attended_drug_features = drug_features
         fused_features = self.fusion(attended_protein_features, attended_drug_features, protein_mask=protein_mask, drug_mask=drug_mask)

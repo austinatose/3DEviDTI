@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # ==== 1. Load CSV ====
 # change this to your actual file name
-log_path = "logs/training_log_20251118_150545_firstgoodone.csv"
+log_path = "logs/training_log_20251119_000806.csv"
 df = pd.read_csv(log_path)
 
 epochs = df["Epoch"]

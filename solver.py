@@ -109,6 +109,10 @@ class Solver:
 
         self.loss_fn = dirichlet_loss if loss_fn == "dirichlet_loss" else F.cross_entropy
         self.start_date = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+
+        with open(os.path.join("logs", f"training_log_{self.start_date}.csv.txt"), "w") as f:
+            f.write(str(cfg))
+
         print(f"Using loss function: {self.loss_fn.__name__}")
 
         print("Solver initialized.")
@@ -345,8 +349,8 @@ if __name__ == "__main__":
     solver.train(solver.train_dl, solver.val_dl)
 
     # dirichlet loss test   
-    B = 4
-    K = 2
+    # B = 4
+    # K = 2
     # alpha = torch.tensor([[1600000, 1.5], [1.6, 1.5], [1.8, 1.7] ,[1.4, 1.3]])
     # print("Alpha:", alpha)
     # labels = torch.tensor([0, 0, 1, 0])
