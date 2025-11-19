@@ -112,6 +112,10 @@ class Solver:
 
         with open(os.path.join("logs", f"training_log_{self.start_date}.csv.txt"), "w") as f:
             f.write(str(cfg))
+            # write model components
+            f.write("\n\nModel architecture:\n")
+            f.write(str(model))
+            f.write("\n")
 
         print(f"Using loss function: {self.loss_fn.__name__}")
 
