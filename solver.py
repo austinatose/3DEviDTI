@@ -110,7 +110,7 @@ class Solver:
         self.loss_fn = dirichlet_loss if loss_fn == "dirichlet_loss" else F.cross_entropy
         self.start_date = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
 
-        with open(os.path.join("logs", f"training_log_{self.start_date}.csv.txt"), "w") as f:
+        with open(os.path.join("logs", f"training_log_{self.start_date}.csv"), "w") as f:
             f.write(str(cfg))
             # write model components
             f.write("\n\nModel architecture:\n")

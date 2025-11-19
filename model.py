@@ -8,7 +8,7 @@ from torch_geometric.nn.pool import global_mean_pool as gmp
 device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class ProteinSA(nn.Module): # is this too slow? is ESM-IF1 already contextualised? can always remove this if necessary
-    def __init__(self, embed_dim, num_heads=8, dropout_rate=0.1):
+    def __init__(self, embed_dim, num_heads=8, dropout_rate=0):
         super(ProteinSA, self).__init__()
         self.multiheadattention = nn.MultiheadAttention(embed_dim, num_heads, dropout=dropout_rate, batch_first=True)
 
@@ -88,16 +88,74 @@ class CrossAttentionOld(nn.Module): # refer to CAT-DTI
         attended_drug_features, attentiond = self.CAd(drug_features, protein_features, protein_features, key_padding_mask=protein_mask)
         return protein_features, drug_features
 
+# class Fusion(nn.Module): # get fixed length representations and concat
+#     def __init__(self, drug_embed_dim, drug_hidden_dims, protein_embed_dim, protein_hidden_dims, dropout_rate=0.2):
+#         super(Fusion, self).__init__()
+#         # 2 for drug but 1 for protein
+#         self.drug_linear = nn.Sequential(
+#             nn.Linear(drug_embed_dim, drug_hidden_dims[1]),
+#             nn.ReLU(),
+#         )
+#         self.protein_linear = nn.Sequential(
+#             nn.Linear(protein_embed_dim, protein_hidden_dims[0]),
+#             nn.ReLU(),
+#         )
+
+#     def forward(self, protein_features, drug_features, protein_mask, drug_mask): # TODO: Think about pooling strategies
+#         # # pooling strategy from evidti
+#         # protein_features = torch.mean(protein_features, dim=1)  # mean pooling
+#         # protein_features = self.protein_linear(protein_features) 
+
+#         # # mean pooling for drugs as recommended by unimol
+#         # drug_features = torch.mean(drug_features, dim=1)  # mean pooling
+#         # drug_features = self.drug_fc1(drug_features)
+#         # drug_features = self.drug_fc2(drug_features)
+
+#         if protein_mask is not None:
+#             valid_p = ~protein_mask                      # True where valid
+#             valid_p = valid_p.unsqueeze(-1)              # (B, Lp, 1)
+#             protein_sum = (protein_features * valid_p).sum(dim=1)  # (B, D)
+#             protein_count = valid_p.sum(dim=1).clamp(min=1)        # (B, 1)
+#             protein_features = protein_sum / protein_count
+#         else:
+#             protein_features = protein_features.mean(dim=1)
+
+#         protein_features = self.protein_linear(protein_features)
+
+#         if drug_mask is not None:
+#             valid_d = ~drug_mask                         # True where valid
+#             valid_d = valid_d.unsqueeze(-1)              # (B, Ld, 1)
+#             drug_sum = (drug_features * valid_d).sum(dim=1)        # (B, D)
+#             drug_count = valid_d.sum(dim=1).clamp(min=1)           # (B, 1)
+#             drug_features = drug_sum / drug_count
+#         else:
+#             drug_features = drug_features.mean(dim=1)
+
+#         drug_features = self.drug_linear(drug_features)
+        
+#         # now both drug and protein features are of same dimension of 256
+#         res = torch.cat((protein_features, drug_features), dim=-1)
+#         return res
+
+
 class Fusion(nn.Module): # get fixed length representations and concat
     def __init__(self, drug_embed_dim, drug_hidden_dims, protein_embed_dim, protein_hidden_dims, dropout_rate=0.2):
         super(Fusion, self).__init__()
         # 2 for drug but 1 for protein
-        self.drug_linear = nn.Sequential(
-            nn.Linear(drug_embed_dim, drug_hidden_dims[1]),
+        self.drug_linear1 = nn.Sequential(
+            nn.Linear(drug_embed_dim, drug_hidden_dims[0]),
+            nn.Dropout(dropout_rate),
             nn.ReLU(),
         )
+        self.drug_linear2 = nn.Sequential(
+            nn.Linear(drug_hidden_dims[0], drug_hidden_dims[1]),
+            nn.Dropout(dropout_rate),
+            nn.ReLU(),
+        )
+
         self.protein_linear = nn.Sequential(
             nn.Linear(protein_embed_dim, protein_hidden_dims[0]),
+            nn.Dropout(dropout_rate),
             nn.ReLU(),
         )
 
@@ -131,65 +189,12 @@ class Fusion(nn.Module): # get fixed length representations and concat
         else:
             drug_features = drug_features.mean(dim=1)
 
-        drug_features = self.drug_linear(drug_features)
+        drug_features = self.drug_linear1(drug_features)
+        drug_features = self.drug_linear2(drug_features)
         
         # now both drug and protein features are of same dimension of 256
         res = torch.cat((protein_features, drug_features), dim=-1)
         return res
-
-
-# class Fusion(nn.Module): # get fixed length representations and concat
-#     def __init__(self, drug_embed_dim, drug_hidden_dims, protein_embed_dim, protein_hidden_dims, dropout_rate=0.2):
-#         super(Fusion, self).__init__()
-#         # 2 for drug but 1 for protein
-#         self.drug_fc1 = nn.Linear(drug_embed_dim, drug_hidden_dims[0])
-#         self.drug_fc2 = nn.Linear(drug_hidden_dims[0], drug_hidden_dims[1])
-
-#         # self.protein_linear = nn.Sequential(
-#         #     nn.Linear(protein_embed_dim, protein_hidden_dims[0]),
-#         #     nn.Dropout(dropout_rate),
-#         #     nn.ReLU(),
-#         #     nn.BatchNorm1d(protein_hidden_dims[0]),
-#         # )
-
-#         self.protein_linear = nn.Linear(protein_embed_dim, protein_hidden_dims[0])
-
-#     def forward(self, protein_features, drug_features, protein_mask, drug_mask): # TODO: Think about pooling strategies
-#         # # pooling strategy from evidti
-#         # protein_features = torch.mean(protein_features, dim=1)  # mean pooling
-#         # protein_features = self.protein_linear(protein_features) 
-
-#         # # mean pooling for drugs as recommended by unimol
-#         # drug_features = torch.mean(drug_features, dim=1)  # mean pooling
-#         # drug_features = self.drug_fc1(drug_features)
-#         # drug_features = self.drug_fc2(drug_features)
-
-#         if protein_mask is not None:
-#             valid_p = ~protein_mask                      # True where valid
-#             valid_p = valid_p.unsqueeze(-1)              # (B, Lp, 1)
-#             protein_sum = (protein_features * valid_p).sum(dim=1)  # (B, D)
-#             protein_count = valid_p.sum(dim=1).clamp(min=1)        # (B, 1)
-#             protein_features = protein_sum / protein_count
-#         else:
-#             protein_features = protein_features.mean(dim=1)
-
-#         protein_features = self.protein_linear(protein_features)
-
-#         if drug_mask is not None:
-#             valid_d = ~drug_mask                         # True where valid
-#             valid_d = valid_d.unsqueeze(-1)              # (B, Ld, 1)
-#             drug_sum = (drug_features * valid_d).sum(dim=1)        # (B, D)
-#             drug_count = valid_d.sum(dim=1).clamp(min=1)           # (B, 1)
-#             drug_features = drug_sum / drug_count
-#         else:
-#             drug_features = drug_features.mean(dim=1)
-
-#         drug_features = self.drug_fc1(drug_features)
-#         drug_features = self.drug_fc2(drug_features)
-        
-#         # now both drug and protein features are of same dimension of 256
-#         res = torch.cat((protein_features, drug_features), dim=-1)
-#         return res
 
 class MLP1(nn.Module):
     def __init__(self, input_dim, hidden_dims, dropout_rate=0.2):
@@ -225,11 +230,11 @@ class MLP2(nn.Module):
 
     def forward(self, x):
         x = self.activation(self.fc1(x))
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = self.activation(self.fc2(x))
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = self.activation(self.fc3(x))
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = self.out(x)
         return x
 
@@ -237,15 +242,15 @@ class Model(nn.Module):
     def __init__(self, cfg):
         super(Model, self).__init__()
         self.protein_sa = ProteinSA(cfg.PROTEIN.EMBEDDING_DIM)
-        self.drug_conv = DrugConv(cfg.DRUG.EMBEDDING_DIM, cfg.DRUG.CONV_DIMS)
+        # self.drug_conv = DrugConv(cfg.DRUG.EMBEDDING_DIM, cfg.DRUG.CONV_DIMS)
         self.cross_attention = CrossAttentionOld(cfg.PROTEIN.EMBEDDING_DIM, dropout_rate=cfg.SOLVER.DROPOUT)
         self.fusion = Fusion(cfg.DRUG.EMBEDDING_DIM, cfg.DRUG.MLP_DIMS, cfg.PROTEIN.EMBEDDING_DIM, cfg.PROTEIN.DIMS, cfg.SOLVER.DROPOUT)
-        self.mlp = MLP2(cfg.MLP.INPUT_DIM, cfg.MLP.DIMS, cfg.SOLVER.DROPOUT)
+        self.mlp = MLP1(cfg.MLP.INPUT_DIM, cfg.MLP.DIMS, cfg.SOLVER.DROPOUT)
     def forward(self, protein_emb, drug_emb, protein_mask=None, drug_mask=None, mode="train"):
         # i should be able to easily turn off SA and the drug CNN
         # input is (B, L, D)
-        # protein_features = self.protein_sa(protein_emb, mask=protein_mask)
-        protein_features = protein_emb  # (B, L, D)
+        protein_features = self.protein_sa(protein_emb, mask=protein_mask)
+        # protein_features = protein_emb  # (B, L, D)
 
         # drug_features = self.drug_conv(drug_emb)
         drug_features = drug_emb  # (B, L, D)
