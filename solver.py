@@ -16,12 +16,6 @@ from model import Model
 import torch
 import torch.nn.functional as F
 
-import torch
-import torch.nn.functional as F
-
-import torch
-import torch.nn.functional as F
-
 def dirichlet_kl_to_uniform(alpha):
     """
     KL(Dir(alpha) || Dir(1,...,1)) per sample.
@@ -110,7 +104,15 @@ class Solver:
         self.loss_fn = dirichlet_loss if loss_fn == "dirichlet_loss" else F.cross_entropy
         self.start_date = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
 
+        self.max_val_acc = 0.0
+
+        # hash together cfg and model and date to identify this training run
+        self.id = hash((str(cfg), str(model), self.start_date))
+        print(f"Training run ID: {self.id}")
+
         with open(os.path.join("logs", f"training_log_{self.start_date}.csv"), "w") as f:
+            f.write(self.start_date + "\n")
+            f.write(str(self.id) + "\n\n")
             f.write(str(cfg))
             # write model components
             f.write("\n\nModel architecture:\n")
@@ -264,6 +266,7 @@ class Solver:
 
     def train(self, train_loader, val_loader):
         no_improve_epochs = 0 # TODO
+        best_val_acc = float('-inf')
         for epoch in range(self.epochs):
             print(f"\n=== Epoch {epoch + 1}/{self.epochs} ===")
             epoch_start_time = pd.Timestamp.now()
@@ -287,8 +290,14 @@ class Solver:
                 val_auc = roc_auc_score(val_results[:, 1], prob_list)
 
             print('[Epoch %d] val accuracy: %.4f%% train accuracy: %.4f%% train loss: %.4f' % (epoch + 1, val_acc, train_acc, train_loss))
-            if epoch % 10 == 0:
+            if epoch % 20 == 0:
                 self.save_model(epoch + 1)
+            if val_acc > self.max_val_acc:
+                self.max_val_acc = val_acc
+                self.save_model(epoch + 1, dir="best_models")
+                no_improve_epochs = 0
+            else:
+                no_improve_epochs += 1
 
             # create new file with current date and time if not exist
             date = self.start_date
@@ -299,10 +308,14 @@ class Solver:
                     f.write("Epoch,Train Loss,Train Acc,Val Acc,Train MCC,Val MCC,Val AUC,TP,TN,FP,FN,Epoch Time (s)\n")
             with open(os.path.join("logs", f"training_log_{date}.csv"), "a") as f:
                 f.write(f"{epoch+1},{train_loss:.6f},{train_acc:.4f},{val_acc:.4f},{train_mcc:.4f},{val_mcc:.4f},{val_auc:.4f},{TP},{TN},{FP},{FN},{epoch_time:.2f}\n")
+
+            if no_improve_epochs >= 7:
+                print("No improvement in validation accuracy for 7 epochs, stopping early.")
+                break
         
         self.evaluate(self.test_dl)
 
-        # TODO: whole bunch incomplete
+        # TODO: whole bunch incomplete (is this still true)
 
 
     def evaluate(self, data_loader):
@@ -340,7 +353,7 @@ class Solver:
             'optimizer_state_dict': self.optim.state_dict(),
             'cfg': self.cfg
         }
-        torch.save(ckpt, os.path.join(dir, f"model_epoch_{epoch}.pt"))
+        torch.save(ckpt, os.path.join(dir, f"model_{self.id}_epoch_{epoch}.pt"))
     # Additional methods for training, validation, testing would go here
 
 if __name__ == "__main__":
@@ -358,7 +371,7 @@ if __name__ == "__main__":
     # alpha = torch.tensor([[1600000, 1.5], [1.6, 1.5], [1.8, 1.7] ,[1.4, 1.3]])
     # print("Alpha:", alpha)
     # labels = torch.tensor([0, 0, 1, 0])
-    # loss = F.cross_entropy(torch.tensor([[1600000, 1.5], [1.6, 1.5], [1.8, 1.7] ,[1.4, 1.3]]), labels)
+    # loss = dirichlet_loss(torch.tensor([[1.5, 1.5], [1.5, 1.5], [1.5, 1.5] ,[1.5, 1.5]]), labels)
     # print("Dirichlet loss test:", loss.item())
 
     # print("labels shape:", labels.shape)
