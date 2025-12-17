@@ -145,7 +145,9 @@ class MyDataset(Dataset):
     def _load_drug(self, drug_id: str):
         path = os.path.join(self.drug_dir, f"{drug_id}_unimol.pt")
         if not os.path.exists(path):
-            raise FileNotFoundError(f"Drug embedding not found: {path}")
+            path = os.path.join(self.drug_dir, f"{drug_id}.pt")
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"Drug embedding not found: {path}")
         d = torch.load(path, map_location="cpu", weights_only=False)
         arr = np.asarray(d["atomic_reprs"], dtype=np.float32).reshape(-1, 512)
         # Drop the dict promptly to free RAM; keep only the tensor view
@@ -275,7 +277,8 @@ class stdDataset(Dataset):
         path = os.path.join(self.drug_dir, f"{drug_id}_unimol.pt")
         if not os.path.exists(path):
             path = os.path.join(self.drug_dir, f"{drug_id}.pt")
-            if not os.path.exists(path):raise FileNotFoundError(f"Drug embedding not found: {path}")
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"Drug embedding not found: {path}")
         d = torch.load(path, map_location="cpu", weights_only=False)
         arr = np.asarray(d["atomic_reprs"], dtype=np.float32).reshape(-1, 512)
         # Drop the dict promptly to free RAM; keep only the tensor view
