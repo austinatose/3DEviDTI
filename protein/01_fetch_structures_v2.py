@@ -441,7 +441,7 @@ def process_one(uniprot: str, out_dir: str, fmt: str, min_cov: float, af_fallbac
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--input_csv", required=True)
-    ap.add_argument("--uniprot_col", default="uniprot")
+    ap.add_argument("--uniprot_col", default="uniprot_id")
     ap.add_argument("--out_dir", required=True)
     ap.add_argument("--format", choices=["mmcif","pdb"], default="mmcif")
     ap.add_argument("--min_coverage", type=float, default=0.2)

@@ -58,10 +58,17 @@ def check_embed_existence(
     )
 
     # ---- drug check: file exists ----
-    drug_file = drug_embedding_path / drug_id
-    drug_ok = drug_file.exists() and drug_file.is_file()
+    # check if file containing drug_id exists in drug_embedding_path
+    # {drug_id}.pt or {drug_id}_unimol.pt
+    drug_file_1 = drug_embedding_path / f"{drug_id}.pt"
+    drug_file_2 = drug_embedding_path / f"{drug_id}_unimol.pt"
+    drug_ok = drug_file_1.exists() or drug_file_2.exists()
+
+    print(f"Protein {uniprot_id} OK: {protein_ok}, Drug {drug_id} OK: {drug_ok}")
 
     return protein_ok and drug_ok
+
+print(input_df.columns.tolist())
 
 for index, row in tqdm(input_df.iterrows(), total=input_df.shape[0]):
     # uniprot_id = row["0"]
@@ -72,7 +79,7 @@ for index, row in tqdm(input_df.iterrows(), total=input_df.shape[0]):
     # drug_chain = get_drug_chain(drug_id, drug_df)
     drug_chain = row['SMILES']
 
-    if (len(prot_chain) > MAX_PROT_LEN or len(drug_chain) > MAX_DRUG_LEN) or prot_chain.isspace() or drug_chain.isspace() and check_embed_existence(row['Target_uniprot'], row['Drug_id'], "embeddings", "drugs/embeddings_atomic"):
+    if (len(prot_chain) > MAX_PROT_LEN or len(drug_chain) > MAX_DRUG_LEN) or prot_chain.isspace() or drug_chain.isspace() or not check_embed_existence(row['1'], row['0'], "embeddings", "drug/embeddings_atomic"):
         input_df.drop(index, inplace=True)
 
 input_df.reset_index(drop=True, inplace=True)
