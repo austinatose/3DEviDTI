@@ -27,11 +27,11 @@ _C.SOLVER.LOSS_FN = "cross_entropy"
 # _C.SOLVER.LOSS_FN = "dirichlet_loss"
 
 _C.DATA = CN()
-_C.DATA.TEST_CSV_PATH = "lists/db_test.csv"
-_C.DATA.TRAIN_CSV_PATH = "lists/db_train.csv"
-_C.DATA.VAL_CSV_PATH = "lists/db_val.csv"
+_C.DATA.TEST_CSV_PATH = "lists/KIBA/test.csv"
+_C.DATA.TRAIN_CSV_PATH = "lists/KIBA/train.csv"
+_C.DATA.VAL_CSV_PATH = "lists/KIBA/val.csv"
 _C.DATA.PROTEIN_DIR = "embeddings"
-_C.DATA.DRUG_DIR = "drug/embeddings_atomic/"
+_C.DATA.DRUG_DIR = "drug/embeddings_atomic_KIBA/"
 
 _C.RESULTS = CN()
 
