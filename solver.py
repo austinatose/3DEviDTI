@@ -3,7 +3,7 @@ import torch
 import pandas as pd
 import numpy as np
 import warnings
-from sklearn.metrics import matthews_corrcoef, confusion_matrix, f1_score, recall_score, precision_score, accuracy_score, roc_auc_score, precision_recall_curve, auc, roc_curve
+from sklearn.metrics import matthews_corrcoef, confusion_matrix, f1_score, recall_score, precision_score, accuracy_score, roc_auc_score, precision_recall_curve, auc, roc_curve, average_precision_score
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 import matplotlib.pyplot as plt
@@ -93,12 +93,12 @@ class Solver:
         # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optim, mode='min', factor=0.5, patience=5)  # FIXME
 
         # use pre-split data first, then implement k-fold later
-        self.train_ds = MyDataset(cfg.DATA.TRAIN_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
+        self.train_ds = KIBADataset(cfg.DATA.TRAIN_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
         self.train_dl = DataLoader(self.train_ds, batch_size=cfg.SOLVER.BATCH_SIZE, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=True)
         
-        self.test_ds = MyDataset(cfg.DATA.TEST_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
+        self.test_ds = KIBADataset(cfg.DATA.TEST_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
         self.test_dl = DataLoader(self.test_ds, batch_size=cfg.SOLVER.BATCH_SIZE, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=False)
-        self.val_ds = MyDataset(cfg.DATA.VAL_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
+        self.val_ds = KIBADataset(cfg.DATA.VAL_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
         self.val_dl = DataLoader(self.val_ds, batch_size=cfg.SOLVER.BATCH_SIZE, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=False)
 
         self.loss_fn = dirichlet_loss if loss_fn == "dirichlet_loss" else F.cross_entropy
@@ -288,8 +288,9 @@ class Solver:
                 train_mcc = matthews_corrcoef(train_results[:, 1], train_results[:, 0])
                 val_mcc = matthews_corrcoef(val_results[:, 1], val_results[:, 0])
                 val_auc = roc_auc_score(val_results[:, 1], prob_list)
+                val_auprc = average_precision_score(val_results[:, 1], prob_list)
 
-            print('[Epoch %d] val accuracy: %.4f%% train accuracy: %.4f%% train loss: %.4f' % (epoch + 1, val_acc, train_acc, train_loss))
+            print('[Epoch %d] val accuracy: %.4f%% train accuracy: %.4f%% train loss: %.4f val AUC: %.4f val AUPRC: %.4f' % (epoch + 1, val_acc, train_acc, train_loss, val_auc, val_auprc))
             if epoch % 20 == 0:
                 self.save_model(epoch + 1)
             if val_acc > self.max_val_acc:
@@ -305,13 +306,13 @@ class Solver:
             print(f"Epoch time: {epoch_time:.2f} seconds")
             if not os.path.exists(os.path.join("logs", f"training_log_{date}.csv")):
                 with open(os.path.join("logs", f"training_log_{date}.csv"), "w") as f:
-                    f.write("Epoch,Train Loss,Train Acc,Val Acc,Train MCC,Val MCC,Val AUC,TP,TN,FP,FN,Epoch Time (s)\n")
+                    f.write("Epoch,Train Loss,Train Acc,Val Acc,Train MCC,Val MCC,Val AUC,Val AUPRC,TP,TN,FP,FN,Epoch Time (s)\n")
             with open(os.path.join("logs", f"training_log_{date}.csv"), "a") as f:
-                f.write(f"{epoch+1},{train_loss:.6f},{train_acc:.4f},{val_acc:.4f},{train_mcc:.4f},{val_mcc:.4f},{val_auc:.4f},{TP},{TN},{FP},{FN},{epoch_time:.2f}\n")
+                f.write(f"{epoch+1},{train_loss:.6f},{train_acc:.4f},{val_acc:.4f},{train_mcc:.4f},{val_mcc:.4f},{val_auc:.4f},{val_auprc:.4f},{TP},{TN},{FP},{FN},{epoch_time:.2f}\n")
 
-            if no_improve_epochs >= 15:
-                print("No improvement in validation accuracy for 10 epochs, stopping early.")
-                break
+            # if no_improve_epochs >= 15:
+            #     print("No improvement in validation accuracy for 10 epochs, stopping early.")
+            #     break
         
         self.evaluate(self.test_dl)
 
@@ -326,7 +327,8 @@ class Solver:
         val_acc = 100 * np.equal(val_results[:, 0], val_results[:, 1]).sum() / len(val_results)
         val_mcc = matthews_corrcoef(val_results[:, 1], val_results[:, 0])
         val_auc = roc_auc_score(val_results[:, 1], prob_list)
-        print('Test accuracy: %.4f%% MCC: %.4f AUC: %.4f' % (val_acc, val_mcc, val_auc))
+        val_auprc = average_precision_score(val_results[:, 1], prob_list)
+        print('Test accuracy: %.4f%% MCC: %.4f AUC: %.4f AUPRC: %.4f' % (val_acc, val_mcc, val_auc, val_auprc))
         val_f1 = f1_score(val_results[:, 1], val_results[:, 0])
         val_precision = precision_score(val_results[:, 1], val_results[:, 0])
         val_recall = recall_score(val_results[:, 1], val_results[:, 0])
