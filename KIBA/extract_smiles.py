@@ -13,7 +13,7 @@ from rdkit.Chem import PandasTools
 # We will extract: drug_id, uniprot_id, smiles, sequence (if present), value.
 
 input_path = "data/Davis-KIBA/kiba.txt"  # adjust if needed
-output_path = "lists/KIBA/KIBA_drugs.csv"
+output_path = "lists/KIBA/KIBA_pairs.csv"
 
 def parse_kiba_line(line: str):
     line = line.strip()
@@ -21,44 +21,43 @@ def parse_kiba_line(line: str):
         return None
 
     parts = line.split()
-    # Expect at least: drug_id, uniprot_id, smiles
-    if len(parts) < 3:
-        return None
 
     drug_id = parts[0]
     uniprot_id = parts[1]
     smiles = parts[2]
-
-    sequence = None
-    value = None
-
-    if len(parts) == 4:
-        # drug_id, uniprot_id, smiles, value
-        value = parts[3]
-    elif len(parts) >= 5:
-        # drug_id, uniprot_id, smiles, sequence, value
-        sequence = parts[3]
-        value = parts[-1]
+    sequence = parts[3]
+    value = parts[4]
 
     # Try to convert value to float if possible
-    try:
-        value = float(value) if value is not None else None
-    except (ValueError, TypeError):
-        pass
+    value = float(value)
 
     if value >= 12.1:
         interaction = 1
     else:
         interaction = 0
 
+    if len(smiles) > 200 or len(sequence) > 700:
+        print(f"Skipping record with long SMILES or sequence: {drug_id}, {uniprot_id}")
+        return None
+    
+    # parse inorganic molecules as well
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            print(f"Invalid SMILES, skipping: {smiles}")
+            return None
+    except Exception as e:
+        print(f"Error parsing SMILES '{smiles}': {e}")
+        return None
+
     return {
-        # "uniprot_id": uniprot_id,
+        "uniprot_id": uniprot_id,
         "drug_id": drug_id,
         
         "smiles": smiles,
-        # "sequence": sequence,
+        "Target sequence": sequence,
         # "kiba_value": value,
-        # "interaction": interaction
+        "interaction": interaction
     }
 
 
@@ -80,7 +79,6 @@ def main():
         return
 
     df = pd.DataFrame(records)
-    df = df.drop_duplicates(subset="drug_id")
 
     # Attach RDKit molecule column if you want to inspect in a notebook
     # PandasTools.AddMoleculeColumnToFrame(df, smilesCol="smiles", molCol="ROMol", includeFingerprints=False)
