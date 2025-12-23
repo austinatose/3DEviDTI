@@ -10,10 +10,20 @@ import numpy as np
 
 import py3Dmol
 
+import argparse
+
 # ---- config ----
-CKPT_PATH = "saved/model_8869200462140314577_epoch_23.pt"  # replace XX with the epoch you want
-# DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
-DEVICE = "cpu"
+parser = argparse.ArgumentParser(description="Inspect attention for a specific (drug_id, uniprot_id) pair")
+parser.add_argument("--ckpt", type=str, default="saved/model_-6508505680996270503_epoch_79.pt", help="Path to checkpoint")
+parser.add_argument("--device", type=str, default="cpu", help="cpu/cuda/mps")
+parser.add_argument("--csv", type=str, default="lists/db_test.csv", help="CSV file to search")
+parser.add_argument("--drug_id", type=str, default=None, help="DrugBank ID to find (e.g., DB00001)")
+parser.add_argument("--uniprot_id", type=str, default=None, help="UniProt ID to find (e.g., P00533)")
+parser.add_argument("--max_search", type=int, default=20000, help="Max batches to scan for the pair")
+args = parser.parse_args()
+
+CKPT_PATH = args.ckpt
+DEVICE = args.device
 
 # ---- load checkpoint ----
 ckpt = torch.load(CKPT_PATH, map_location=DEVICE, weights_only=False)
@@ -25,19 +35,47 @@ model.to(DEVICE)
 
 solver = Solver(model, cfg, device=DEVICE, optim=torch.optim.Adam, loss_fn=cfg.SOLVER.LOSS_FN, eval=None)
 
-test_ds = MyDataset(cfg.DATA.TEST_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
+test_ds = MyDataset(args.csv, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
 test_dl = DataLoader(test_ds, batch_size=1, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=False)
 
-set = next(iter(test_dl))
-labels = set['label'].to(DEVICE)
-protein_emb = set['protein_emb'].to(DEVICE)
-drug_emb = set['drug_emb'].to(DEVICE)
-protein_mask = set['protein_mask'].to(DEVICE)
-drug_mask = set['drug_mask'].to(DEVICE)
-drug_id = set['drug_id']
-protein_id = set['uniprot_id']
+# ---- find a specific (drug_id, uniprot_id) pair if requested ----
+selected = None
+if args.drug_id is not None or args.uniprot_id is not None:
+    print(f"Searching for pair: drug_id={args.drug_id}, uniprot_id={args.uniprot_id} in {args.csv}")
+    for i, batch in enumerate(test_dl):
+        if i >= args.max_search:
+            break
+        b_drug = batch.get("drug_id", [None])[0]
+        b_prot = batch.get("uniprot_id", [None])[0]
+
+        ok_drug = (args.drug_id is None) or (b_drug == args.drug_id)
+        ok_prot = (args.uniprot_id is None) or (b_prot == args.uniprot_id)
+
+        if ok_drug and ok_prot:
+            selected = batch
+            print(f"Found at batch {i}: drug_id={b_drug}, uniprot_id={b_prot}")
+            break
+
+    if selected is None:
+        raise RuntimeError(
+            "Pair not found. Check IDs, or increase --max_search, or confirm the CSV contains that pair. "
+            f"Requested drug_id={args.drug_id}, uniprot_id={args.uniprot_id}."
+        )
+else:
+    # fallback: original behavior
+    selected = next(iter(test_dl))
+
+set = selected
+labels = set["label"].to(DEVICE)
+protein_emb = set["protein_emb"].to(DEVICE)
+drug_emb = set["drug_emb"].to(DEVICE)
+protein_mask = set["protein_mask"].to(DEVICE)
+drug_mask = set["drug_mask"].to(DEVICE)
+drug_id = set["drug_id"]
+protein_id = set["uniprot_id"]
 print("Drug ID:", drug_id)
 print("Protein ID:", protein_id)
+print("Label:", int(labels.detach().cpu().view(-1)[0].item()))
 
 drug_rep = torch.load(f"drug/embeddings_atomic/{drug_id[0]}_unimol.pt", weights_only=False)
 print(np.array(drug_rep["atomic_reprs"]))  # (N_atoms, 512)

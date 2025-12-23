@@ -702,53 +702,53 @@ if __name__ == "__main__":
     #     )
     #     plot_curve(res_p_del_pos, title="Faithfulness: Protein deletion (POS, Δlogit)")
 
-    # if len(samples_neg) >= 2:
-    #     res_p_del_neg = scorer.evaluate_dataset(
-    #         samples=samples_neg,
-    #         mode="protein",
-    #         test_type="deletion",
-    #         fractions=fractions,
-    #         n_random=args.n_random,
-    #         seed=0,
-    #         normalize_to_baseline=True,
-    #     )
-    #     plot_curve(res_p_del_neg, title="Faithfulness: Protein deletion (NEG, Δlogit)")
+    if len(samples_neg) >= 2:
+        res_p_del_neg = scorer.evaluate_dataset(
+            samples=samples_neg,
+            mode="protein",
+            test_type="deletion",
+            fractions=fractions,
+            n_random=args.n_random,
+            seed=0,
+            normalize_to_baseline=True,
+        )
+        plot_curve(res_p_del_neg, title="Faithfulness: Protein deletion (NEG, Δlogit)")
 
     # ---- Drug-side deletion (ALL / POS / NEG) ----
-    res_d_del_all = scorer.evaluate_dataset(
-        samples=samples,
-        mode="drug",
-        test_type="deletion",
-        fractions=fractions,
-        n_random=args.n_random,
-        seed=0,
-        normalize_to_baseline=True,
-    )
-    plot_curve(res_d_del_all, title=f"Faithfulness: Drug deletion (ALL, Δ{args.score_mode})")
+    # res_d_del_all = scorer.evaluate_dataset(
+    #     samples=samples,
+    #     mode="drug",
+    #     test_type="deletion",
+    #     fractions=fractions,
+    #     n_random=args.n_random,
+    #     seed=0,
+    #     normalize_to_baseline=True,
+    # )
+    # plot_curve(res_d_del_all, title=f"Faithfulness: Drug deletion (ALL, Δ{args.score_mode})")
 
-    # if len(samples_pos) >= 2:
-    #     res_d_del_pos = scorer.evaluate_dataset(
-    #         samples=samples_pos,
-    #         mode="drug",
-    #         test_type="deletion",
-    #         fractions=fractions,
-    #         n_random=args.n_random,
-    #         seed=0,
-    #         normalize_to_baseline=True,
-    #     )
-    #     plot_curve(res_d_del_pos, title="Faithfulness: Drug deletion (POS, Δlogit)")
+    if len(samples_pos) >= 2:
+        res_d_del_pos = scorer.evaluate_dataset(
+            samples=samples_pos,
+            mode="drug",
+            test_type="deletion",
+            fractions=fractions,
+            n_random=args.n_random,
+            seed=0,
+            normalize_to_baseline=True,
+        )
+        plot_curve(res_d_del_pos, title="Faithfulness: Drug deletion (POS, Δlogit)")
 
-    # if len(samples_neg) >= 2:
-    #     res_d_del_neg = scorer.evaluate_dataset(
-    #         samples=samples_neg,
-    #         mode="drug",
-    #         test_type="deletion",
-    #         fractions=fractions,
-    #         n_random=args.n_random,
-    #         seed=0,
-    #         normalize_to_baseline=True,
-    #     )
-    #     plot_curve(res_d_del_neg, title="Faithfulness: Drug deletion (NEG, Δlogit)")
+    if len(samples_neg) >= 2:
+        res_d_del_neg = scorer.evaluate_dataset(
+            samples=samples_neg,
+            mode="drug",
+            test_type="deletion",
+            fractions=fractions,
+            n_random=args.n_random,
+            seed=0,
+            normalize_to_baseline=True,
+        )
+        plot_curve(res_d_del_neg, title="Faithfulness: Drug deletion (NEG, Δlogit)")
 
     # Optional: insertion tests (uncomment if desired)
     # res_p_ins = scorer.evaluate_dataset(samples=samples, mode="protein", test_type="insertion", fractions=fractions, n_random=args.n_random)
