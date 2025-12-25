@@ -150,6 +150,10 @@ def _clone_sample(sample: Sample) -> Sample:
         meta=copy.deepcopy(sample.meta),
     )
 
+def _valid_positions(mask: "Tensor") -> np.ndarray:
+    """Indices of valid (non-PAD) positions. mask: True=PAD."""
+    m = mask.detach().cpu().bool().numpy().reshape(-1)
+    return np.where(~m)[0].astype(int)
 
 def _mask_indices(
     emb: "Tensor",
@@ -157,14 +161,15 @@ def _mask_indices(
     indices: Sequence[int],
     mask_embedding_value: float = 0.0,
 ) -> Tuple["Tensor", "Tensor"]:
-    """Mask a set of positions by zeroing embeddings and setting mask to 0."""
+    """Mask a set of positions by zeroing embeddings and marking them as PAD (mask=True)."""
     if len(indices) == 0:
         return emb, mask
+    if mask.dtype != torch.bool:
+        mask = mask.bool()
     idx = torch.as_tensor(indices, device=emb.device, dtype=torch.long)
-    mask[idx] = 0
+    mask[idx] = True
     emb[idx, :] = mask_embedding_value
     return emb, mask
-
 
 def _insert_indices(
     emb_base: "Tensor",
@@ -172,11 +177,13 @@ def _insert_indices(
     emb_full: "Tensor",
     indices: Sequence[int],
 ) -> Tuple["Tensor", "Tensor"]:
-    """Insert (unmask) a set of positions from full embeddings into baseline."""
+    """Insert (unmask) positions from full embeddings into baseline (mask=False)."""
     if len(indices) == 0:
         return emb_base, mask_base
+    if mask_base.dtype != torch.bool:
+        mask_base = mask_base.bool()
     idx = torch.as_tensor(indices, device=emb_base.device, dtype=torch.long)
-    mask_base[idx] = 1
+    mask_base[idx] = False
     emb_base[idx, :] = emb_full[idx, :]
     return emb_base, mask_base
 
@@ -215,8 +222,8 @@ class FaithfulnessScorer:
         return Sample(
             protein_emb=sample.protein_emb.to(dev),
             drug_emb=sample.drug_emb.to(dev),
-            protein_mask=sample.protein_mask.to(dev),
-            drug_mask=sample.drug_mask.to(dev),
+            protein_mask=sample.protein_mask.to(dev).bool(),
+            drug_mask=sample.drug_mask.to(dev).bool(),
             meta=sample.meta,
         )
 
@@ -245,7 +252,9 @@ class FaithfulnessScorer:
         provided_rank: Optional[Sequence[int]] = None,
         rng: Optional[np.random.Generator] = None,
     ) -> np.ndarray:
-        L = int(sample.protein_mask.numel() if mode == "protein" else sample.drug_mask.numel())
+        mask_t = sample.protein_mask if mode == "protein" else sample.drug_mask
+        valid = _valid_positions(mask_t)
+        L = int(valid.size)
 
         if rank_source == "provided":
             if provided_rank is None:
@@ -256,13 +265,15 @@ class FaithfulnessScorer:
         if rank_source == "random":
             if rng is None:
                 rng = np.random.default_rng()
-            ranked = np.arange(L, dtype=int)
+            ranked = valid.copy()
             rng.shuffle(ranked)
             return ranked
 
         # co-attention ranking
         score0, ap, ad = self._score_and_attn(sample)
         ranked = rank_from_attention(ap, ad, mode=mode)
+        ranked = ranked[np.isin(ranked, valid)]
+        return ranked[:L]
         return ranked
 
     @torch.no_grad()
@@ -299,13 +310,14 @@ class FaithfulnessScorer:
         )
 
         # Determine length
-        L = int(sample.protein_mask.numel() if mode == "protein" else sample.drug_mask.numel())
+        mask_t = sample.protein_mask if mode == "protein" else sample.drug_mask
+        L = int(_valid_positions(mask_t).size)
 
         # Baseline for insertion: fully masked
         if test_type == "insertion":
             base = _clone_sample(sample)
-            base.protein_emb.zero_(); base.protein_mask.zero_()
-            base.drug_emb.zero_(); base.drug_mask.zero_()
+            base.protein_emb.zero_(); base.protein_mask.fill_(True)
+            base.drug_emb.zero_(); base.drug_mask.fill_(True)
         else:
             base = None
 
@@ -427,26 +439,95 @@ class FaithfulnessScorer:
 # Convenience plotting (optional)
 # --------------------------
 
+import matplotlib as mpl
+
+def set_segoe_research_style(scale: float = 1.0) -> None:
+    """
+    Paper-friendly Matplotlib style using Segoe UI.
+    - No custom color cycle (keeps Matplotlib defaults)
+    - Works well for single-column and slides
+    """
+    base = 11 * scale          # body text
+    small = 10 * scale         # ticks/legend
+    title = 12 * scale         # titles
+    lw = 1.2 * scale           # line width
+
+    mpl.rcParams.update({
+        # --- Font ---
+        "font.family": "sans-serif",
+        "font.sans-serif": ["Segoe UI", "Arial", "DejaVu Sans"],
+        "mathtext.fontset": "dejavusans",
+        "axes.unicode_minus": False,
+
+        # --- Figure ---
+        "figure.dpi": 120,
+        "savefig.dpi": 300,
+        "savefig.bbox": "tight",
+        "savefig.pad_inches": 0.03,
+
+        # --- Axes ---
+        "axes.titlesize": title,
+        "axes.labelsize": base,
+        "axes.titlepad": 8,
+        "axes.labelpad": 6,
+        "axes.linewidth": 0.8,
+
+        # --- Ticks ---
+        "xtick.labelsize": small,
+        "ytick.labelsize": small,
+        "xtick.direction": "out",
+        "ytick.direction": "out",
+        "xtick.major.size": 4,
+        "ytick.major.size": 4,
+        "xtick.major.width": 0.8,
+        "ytick.major.width": 0.8,
+        "xtick.minor.visible": True,
+        "ytick.minor.visible": True,
+
+        # --- Grid (subtle) ---
+        "axes.grid": True,
+        "grid.linewidth": 0.6,
+        "grid.alpha": 0.25,
+
+        # --- Legend ---
+        "legend.fontsize": small,
+        "legend.frameon": False,
+        "legend.handlelength": 2.0,
+
+        # --- Lines/markers ---
+        "lines.linewidth": lw,
+        "lines.markersize": 4.5 * scale,
+
+        # --- Layout ---
+        "figure.constrained_layout.use": True,
+    })
+
+set_segoe_research_style(scale=1.0)
+
 def plot_curve(result: CurveResult, title: str = "Faithfulness curve") -> None:
     """Quick matplotlib plot; keeps matplotlib optional."""
     import matplotlib.pyplot as plt
 
     x = result.fractions
 
-    plt.figure()
-    plt.plot(x, result.mean_ours, label="ours")
+    from matplotlib.figure import figaspect
+
+    plt.show()
+
+
+    plt.figure(figsize=(6, 3))
+    plt.plot(x, result.mean_ours, label="selective")
     plt.fill_between(x, result.mean_ours - result.std_ours, result.mean_ours + result.std_ours, alpha=0.2)
 
     plt.plot(x, result.mean_rand, label="random")
     plt.fill_between(x, result.mean_rand - result.std_rand, result.mean_rand + result.std_rand, alpha=0.2)
 
-    plt.xlabel("fraction masked/inserted")
-    plt.ylabel("Δ score (normalized)")
-    plt.title(f"{title}\nAUDC ours={result.audc_ours:.4f}, rand={result.audc_rand:.4f}")
+    plt.xlabel("fraction masked")
+    plt.ylabel("Δmargin")
+    plt.title(f"{title}\nAUDC selective={result.audc_ours:.4f}, rand={result.audc_rand:.4f}")
     plt.legend()
     plt.tight_layout()
     plt.show()
-
 #
 # --------------------------
 # Runnable example (mirrors attentiontest.py)
@@ -568,7 +649,7 @@ if __name__ == "__main__":
     model.eval()
 
     # ---- dataset/dataloader (same style as attentiontest.py) ----
-    test_ds = MyDataset(cfg.DATA.TEST_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
+    test_ds = MyDataset('lists/db_test.csv', cfg.DATA.PROTEIN_DIR, 'drug/embeddings_atomic')
     test_dl = DataLoader(test_ds, batch_size=1, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=False)
 
     samples = _build_samples_from_loader(test_dl, device=DEVICE, max_samples=args.max_samples)
@@ -690,17 +771,17 @@ if __name__ == "__main__":
     # )
     # plot_curve(res_p_del_all, title=f"Faithfulness: Protein deletion (ALL, Δ{args.score_mode})")
 
-    # if len(samples_pos) >= 2:
-    #     res_p_del_pos = scorer.evaluate_dataset(
-    #         samples=samples_pos,
-    #         mode="protein",
-    #         test_type="deletion",
-    #         fractions=fractions,
-    #         n_random=args.n_random,
-    #         seed=0,
-    #         normalize_to_baseline=True,
-    #     )
-    #     plot_curve(res_p_del_pos, title="Faithfulness: Protein deletion (POS, Δlogit)")
+    if len(samples_pos) >= 2:
+        res_p_del_pos = scorer.evaluate_dataset(
+            samples=samples_pos,
+            mode="protein",
+            test_type="deletion",
+            fractions=fractions,
+            n_random=args.n_random,
+            seed=0,
+            normalize_to_baseline=True,
+        )
+        plot_curve(res_p_del_pos, title="Protein deletion (POS)")
 
     if len(samples_neg) >= 2:
         res_p_del_neg = scorer.evaluate_dataset(
@@ -712,7 +793,7 @@ if __name__ == "__main__":
             seed=0,
             normalize_to_baseline=True,
         )
-        plot_curve(res_p_del_neg, title="Faithfulness: Protein deletion (NEG, Δlogit)")
+        plot_curve(res_p_del_neg, title="Protein deletion (NEG)")
 
     # ---- Drug-side deletion (ALL / POS / NEG) ----
     # res_d_del_all = scorer.evaluate_dataset(
@@ -736,7 +817,7 @@ if __name__ == "__main__":
             seed=0,
             normalize_to_baseline=True,
         )
-        plot_curve(res_d_del_pos, title="Faithfulness: Drug deletion (POS, Δlogit)")
+        plot_curve(res_d_del_pos, title="Drug deletion (POS)")
 
     if len(samples_neg) >= 2:
         res_d_del_neg = scorer.evaluate_dataset(
@@ -748,7 +829,7 @@ if __name__ == "__main__":
             seed=0,
             normalize_to_baseline=True,
         )
-        plot_curve(res_d_del_neg, title="Faithfulness: Drug deletion (NEG, Δlogit)")
+        plot_curve(res_d_del_neg, title="Drug deletion (NEG)")
 
     # Optional: insertion tests (uncomment if desired)
     # res_p_ins = scorer.evaluate_dataset(samples=samples, mode="protein", test_type="insertion", fractions=fractions, n_random=args.n_random)
