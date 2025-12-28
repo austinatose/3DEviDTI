@@ -489,25 +489,26 @@ class Model(nn.Module):
     def __init__(self, cfg):
         super(Model, self).__init__()
         # self.protein_sa = ProteinSAnew(cfg.PROTEIN.EMBEDDING_DIM, num_heads=4, dropout_rate=cfg.SOLVER.DROPOUT)
-        self.protein_sa = nn.TransformerEncoder(
-            nn.TransformerEncoderLayer(
-                d_model=cfg.PROTEIN.EMBEDDING_DIM,
-                nhead=4,
-                dropout=cfg.SOLVER.DROPOUT,
-                batch_first=True,
-                # activation="gelu",
-            ), num_layers=1)
+        # self.protein_sa = nn.TransformerEncoder(
+        #     nn.TransformerEncoderLayer(
+        #         d_model=cfg.PROTEIN.EMBEDDING_DIM,
+        #         nhead=4,
+        #         dropout=cfg.SOLVER.DROPOUT,
+        #         batch_first=True,
+        #         # activation="gelu",
+        #     ), num_layers=1)
+        self.protein_cnn = DrugCNN(cfg.PROTEIN.EMBEDDING_DIM, hidden_dim=cfg.PROTEIN.EMBEDDING_DIM, num_layers=2, dropout_rate=cfg.SOLVER.DROPOUT)
         # self.drug_sa = DrugSA(cfg.DRUG.EMBEDDING_DIM)
         # self.drug_conv = DrugConv(cfg.DRUG.EMBEDDING_DIM, cfg.DRUG.CONV_DIMS)
-        # self.drug_cnn = DrugCNN(cfg.DRUG.EMBEDDING_DIM, hidden_dim=cfg.DRUG.EMBEDDING_DIM, num_layers=2, dropout_rate=cfg.SOLVER.DROPOUT)
-        self.drug_sa = nn.TransformerEncoder(
-            nn.TransformerEncoderLayer(
-                d_model=cfg.DRUG.EMBEDDING_DIM,
-                nhead=4,
-                dropout=cfg.SOLVER.DROPOUT,
-                batch_first=True,
-                # activation="gelu",
-            ), num_layers=4)
+        self.drug_cnn = DrugCNN(cfg.DRUG.EMBEDDING_DIM, hidden_dim=cfg.DRUG.EMBEDDING_DIM, num_layers=2, dropout_rate=cfg.SOLVER.DROPOUT)
+        # self.drug_sa = nn.TransformerEncoder(
+        #     nn.TransformerEncoderLayer(
+        #         d_model=cfg.DRUG.EMBEDDING_DIM,
+        #         nhead=4,
+        #         dropout=cfg.SOLVER.DROPOUT,
+        #         batch_first=True,
+        #         # activation="gelu",
+        #     ), num_layers=4)
         self.cross_attention = CrossAttention(cfg.PROTEIN.EMBEDDING_DIM, dropout_rate=cfg.SOLVER.DROPOUT, num_heads=4)
 
         self.fusion = FusionNew(cfg.DRUG.EMBEDDING_DIM, cfg.DRUG.MLP_DIMS, cfg.PROTEIN.EMBEDDING_DIM, cfg.PROTEIN.MLP_DIMS, cfg.SOLVER.DROPOUT)
@@ -515,12 +516,13 @@ class Model(nn.Module):
     def forward(self, protein_emb, drug_emb, protein_mask=None, drug_mask=None, mode="train", return_attention=False):
         # i should be able to easily turn off SA and the drug CNN
         # input is (B, L, D)
-        protein_features = self.protein_sa(protein_emb, src_key_padding_mask=protein_mask)
+        # protein_features = self.protein_sa(protein_emb, src_key_padding_mask=protein_mask)
+        protein_features = self.protein_cnn(protein_emb)
         # protein_features = protein_emb  # (B, L, D)
 
-        # drug_features = self.drug_cnn(drug_emb)
+        drug_features = self.drug_cnn(drug_emb)
         # drug_features = self.drug_sa(drug_emb, mask=drug_mask)
-        drug_features = self.drug_sa(drug_emb, src_key_padding_mask=drug_mask)  # (B, L, D)
+        # drug_features = self.drug_sa(drug_emb, src_key_padding_mask=drug_mask)  # (B, L, D)
         # Both (B, L, D)
         if return_attention:
             attended_protein_features, attended_drug_features, attentionp, attentiond = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask, return_attention=True)
