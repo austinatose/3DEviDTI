@@ -508,7 +508,7 @@ class Model(nn.Module):
         #         batch_first=True,
         #         # activation="gelu",
         #     ), num_layers=4)
-        self.cross_attention = CrossAttention(cfg.PROTEIN.EMBEDDING_DIM, dropout_rate=cfg.SOLVER.DROPOUT, num_heads=4)
+        # self.cross_attention = CrossAttention(cfg.PROTEIN.EMBEDDING_DIM, dropout_rate=cfg.SOLVER.DROPOUT, num_heads=4)
 
         self.fusion = FusionNew(cfg.DRUG.EMBEDDING_DIM, cfg.DRUG.MLP_DIMS, cfg.PROTEIN.EMBEDDING_DIM, cfg.PROTEIN.MLP_DIMS, cfg.SOLVER.DROPOUT)
         self.mlp = MLP2(cfg.MLP.INPUT_DIM, cfg.MLP.DIMS, cfg.SOLVER.DROPOUT)
@@ -522,18 +522,21 @@ class Model(nn.Module):
         # drug_features = self.drug_sa(drug_emb, mask=drug_mask)
         # drug_features = self.drug_sa(drug_emb, src_key_padding_mask=drug_mask)  # (B, L, D)
         # Both (B, L, D)
-        if return_attention:
-            attended_protein_features, attended_drug_features, attentionp, attentiond = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask, return_attention=True)
-        else:
-            attended_protein_features, attended_drug_features = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask, return_attention=False)
+        # if return_attention:
+        #     attended_protein_features, attended_drug_features, attentionp, attentiond = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask, return_attention=True)
+        # else:
+        #     attended_protein_features, attended_drug_features = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask, return_attention=False)
+        attended_protein_features = protein_features
+        attended_drug_features = drug_features
         fused_features = self.fusion(attended_protein_features, attended_drug_features, protein_mask=protein_mask, drug_mask=drug_mask)
         # at this point, shape of (B, D)
         output = self.mlp(fused_features)
+        return output
 
-        if return_attention:
-            return output, attentionp, attentiond
-        else:
-            return output
+        # if return_attention:
+        #     return output, attentionp, attentiond
+        # else:
+        #     return output
     
 class stdModel(nn.Module):
     def __init__(self, cfg):
