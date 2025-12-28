@@ -88,7 +88,7 @@ class DrugConv(nn.Module):
         return x
 
 class DrugCNN(nn.Module):
-    def __init__(self, embed_dim, hidden_dim=None, num_layers=1, kernel_size=3, dropout_rate=0.1):
+    def __init__(self, embed_dim, hidden_dim=None, num_layers=2, kernel_size=3, dropout_rate=0.1):
         super().__init__()
         if hidden_dim is None:
             hidden_dim = embed_dim  # keep same dim for simplicity
@@ -96,6 +96,13 @@ class DrugCNN(nn.Module):
         self.layers = nn.ModuleList()
         self.dropout = nn.Dropout(dropout_rate)
         self.activation = nn.ReLU()
+
+        # conv1 = nn.Conv1d(in_channels=embed_dim,
+        #                     out_channels=hidden_dim,
+        #                     kernel_size=kernel_size,
+        #                     padding=kernel_size // 2,  # keep length
+        #                     stride=1)
+        # self.layers.append(conv1)
 
         in_c = embed_dim
         for i in range(num_layers):

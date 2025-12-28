@@ -93,12 +93,12 @@ class Solver:
         # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optim, mode='min', factor=0.5, patience=5)  # FIXME
 
         # use pre-split data first, then implement k-fold later
-        self.train_ds = MyDataset(cfg.DATA.TRAIN_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
+        self.train_ds = KIBADataset(cfg.DATA.TRAIN_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
         self.train_dl = DataLoader(self.train_ds, batch_size=cfg.SOLVER.BATCH_SIZE, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=True)
         
-        self.test_ds = MyDataset(cfg.DATA.TEST_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
+        self.test_ds = KIBADataset(cfg.DATA.TEST_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
         self.test_dl = DataLoader(self.test_ds, batch_size=cfg.SOLVER.BATCH_SIZE, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=False)
-        self.val_ds = MyDataset(cfg.DATA.VAL_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
+        self.val_ds = KIBADataset(cfg.DATA.VAL_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
         self.val_dl = DataLoader(self.val_ds, batch_size=cfg.SOLVER.BATCH_SIZE, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=False)
 
         self.loss_fn = dirichlet_loss if loss_fn == "dirichlet_loss" else F.cross_entropy
@@ -291,8 +291,8 @@ class Solver:
                 val_auprc = average_precision_score(val_results[:, 1], prob_list)
 
             print('[Epoch %d] val accuracy: %.4f%% train accuracy: %.4f%% train loss: %.4f val AUC: %.4f val AUPRC: %.4f' % (epoch + 1, val_acc, train_acc, train_loss, val_auc, val_auprc))
-            if epoch % 20 == 0:
-                self.save_model(epoch + 1)
+
+            self.save_model(epoch + 1) # remember to delete
             if val_acc > self.max_val_acc:
                 self.max_val_acc = val_acc
                 self.save_model(epoch + 1, dir="best_models")
