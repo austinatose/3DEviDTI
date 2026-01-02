@@ -10,6 +10,8 @@ Designed to be model-agnostic:
 - You provide callables that run your model and optionally return attention matrices.
 - Masking is done on embeddings + masks (recommended, avoids tokenizer/chemistry confounds).
 
+Ranking for masking defaults to *directional cross-attention* (protein→drug for drug masking, drug→protein for protein masking).
+
 Typical usage pattern:
 
     scorer = FaithfulnessScorer(
@@ -128,13 +130,58 @@ def coattention_inter_map(attn_p: np.ndarray, attn_d: np.ndarray, eps: float = 1
     return inter
 
 
-def rank_from_attention(attn_p: np.ndarray, attn_d: np.ndarray, mode: Mode) -> np.ndarray:
-    """Return ranked indices for protein residues or drug atoms based on co-attention."""
-    inter = coattention_inter_map(attn_p, attn_d)
-    if mode == "protein":
-        score = inter.sum(axis=1)  # (Lp,)
-    elif mode == "drug":
-        score = inter.sum(axis=0)  # (Ld,)
+RankMethod = Literal["directional", "symmetric"]
+
+def rank_from_attention(
+    attn_p: np.ndarray,
+    attn_d: np.ndarray,
+    mode: Mode,
+    method: RankMethod = "directional",
+    agg: Literal["sum", "mean"] = "sum",
+) -> np.ndarray:
+    """Rank protein residues or drug atoms from attention.
+
+    Args:
+        attn_p: (Lp, Ld) protein→drug attention (protein queries over drug keys)
+        attn_d: (Ld, Lp) drug→protein attention (drug queries over protein keys)
+        mode: which side to rank ("protein" or "drug")
+        method:
+            - "directional": rank the target side from the *opposite side's queries*:
+                mode=="drug"    -> aggregate attn_p over protein queries (axis=0)
+                mode=="protein" -> aggregate attn_d over drug queries    (axis=0)
+            - "symmetric": geometric-mean symmetric co-attention map (legacy)
+        agg: aggregation over the query dimension (sum or mean)
+
+    Returns:
+        ranked indices (descending)
+    """
+    ap = np.asarray(attn_p, dtype=float)
+    ad = np.asarray(attn_d, dtype=float)
+    if ap.ndim != 2 or ad.ndim != 2:
+        raise ValueError(f"attn_p/attn_d must be 2D; got {ap.shape} and {ad.shape}")
+    if ap.shape[0] != ad.shape[1] or ap.shape[1] != ad.shape[0]:
+        raise ValueError(
+            "attn shapes inconsistent: expected attn_p (Lp,Ld) and attn_d (Ld,Lp); "
+            f"got {ap.shape} and {ad.shape}"
+        )
+
+    if method == "symmetric":
+        inter = coattention_inter_map(ap, ad)
+        if mode == "protein":
+            score = inter.sum(axis=1)
+        elif mode == "drug":
+            score = inter.sum(axis=0)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+        return _argsort_desc(score)
+
+    # Directional ranking (requested default)
+    if mode == "drug":
+        # protein queries -> drug atoms
+        score = ap.sum(axis=0) if agg == "sum" else ap.mean(axis=0)  # (Ld,)
+    elif mode == "protein":
+        # drug queries -> protein residues
+        score = ad.sum(axis=0) if agg == "sum" else ad.mean(axis=0)  # (Lp,)
     else:
         raise ValueError(f"Unknown mode: {mode}")
     return _argsort_desc(score)
@@ -208,12 +255,14 @@ class FaithfulnessScorer:
         forward_fn: Callable[[Sample], "Tensor"],
         forward_with_attn_fn: Optional[Callable[[Sample], Tuple["Tensor", np.ndarray, np.ndarray]]] = None,
         device: Optional[str] = None,
+        rank_method: RankMethod = "directional",
     ):
         if torch is None:
             raise ImportError("PyTorch is required for faithfulness.py")
         self.forward_fn = forward_fn
         self.forward_with_attn_fn = forward_with_attn_fn
         self.device = device
+        self.rank_method = rank_method
 
     def _ensure_device(self, sample: Sample) -> Sample:
         if self.device is None:
@@ -271,7 +320,7 @@ class FaithfulnessScorer:
 
         # co-attention ranking
         score0, ap, ad = self._score_and_attn(sample)
-        ranked = rank_from_attention(ap, ad, mode=mode)
+        ranked = rank_from_attention(ap, ad, mode=mode, method=self.rank_method)
         ranked = ranked[np.isin(ranked, valid)]
         return ranked[:L]
         return ranked
@@ -783,17 +832,17 @@ if __name__ == "__main__":
         )
         plot_curve(res_p_del_pos, title="Protein deletion (POS)")
 
-    if len(samples_neg) >= 2:
-        res_p_del_neg = scorer.evaluate_dataset(
-            samples=samples_neg,
-            mode="protein",
-            test_type="deletion",
-            fractions=fractions,
-            n_random=args.n_random,
-            seed=0,
-            normalize_to_baseline=True,
-        )
-        plot_curve(res_p_del_neg, title="Protein deletion (NEG)")
+    # if len(samples_neg) >= 2:
+    #     res_p_del_neg = scorer.evaluate_dataset(
+    #         samples=samples_neg,
+    #         mode="protein",
+    #         test_type="deletion",
+    #         fractions=fractions,
+    #         n_random=args.n_random,
+    #         seed=0,
+    #         normalize_to_baseline=True,
+    #     )
+    #     plot_curve(res_p_del_neg, title="Protein deletion (NEG)")
 
     # ---- Drug-side deletion (ALL / POS / NEG) ----
     # res_d_del_all = scorer.evaluate_dataset(
@@ -807,29 +856,29 @@ if __name__ == "__main__":
     # )
     # plot_curve(res_d_del_all, title=f"Faithfulness: Drug deletion (ALL, Δ{args.score_mode})")
 
-    if len(samples_pos) >= 2:
-        res_d_del_pos = scorer.evaluate_dataset(
-            samples=samples_pos,
-            mode="drug",
-            test_type="deletion",
-            fractions=fractions,
-            n_random=args.n_random,
-            seed=0,
-            normalize_to_baseline=True,
-        )
-        plot_curve(res_d_del_pos, title="Drug deletion (POS)")
+    # if len(samples_pos) >= 2:
+    #     res_d_del_pos = scorer.evaluate_dataset(
+    #         samples=samples_pos,
+    #         mode="drug",
+    #         test_type="deletion",
+    #         fractions=fractions,
+    #         n_random=args.n_random,
+    #         seed=0,
+    #         normalize_to_baseline=True,
+    #     )
+    #     plot_curve(res_d_del_pos, title="Drug deletion (POS)")
 
-    if len(samples_neg) >= 2:
-        res_d_del_neg = scorer.evaluate_dataset(
-            samples=samples_neg,
-            mode="drug",
-            test_type="deletion",
-            fractions=fractions,
-            n_random=args.n_random,
-            seed=0,
-            normalize_to_baseline=True,
-        )
-        plot_curve(res_d_del_neg, title="Drug deletion (NEG)")
+    # if len(samples_neg) >= 2:
+    #     res_d_del_neg = scorer.evaluate_dataset(
+    #         samples=samples_neg,
+    #         mode="drug",
+    #         test_type="deletion",
+    #         fractions=fractions,
+    #         n_random=args.n_random,
+    #         seed=0,
+    #         normalize_to_baseline=True,
+    #     )
+    #     plot_curve(res_d_del_neg, title="Drug deletion (NEG)")
 
     # Optional: insertion tests (uncomment if desired)
     # res_p_ins = scorer.evaluate_dataset(samples=samples, mode="protein", test_type="insertion", fractions=fractions, n_random=args.n_random)

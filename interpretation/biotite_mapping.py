@@ -1,5 +1,3 @@
-
-
 """biotite_mapping.py
 
 Map UniProt/FASTA indices to the *structure-derived* residue sequence used by ESM-IF1.
@@ -49,6 +47,73 @@ import biotite.sequence as bseq
 import biotite.sequence.align as balign
 from biotite.sequence.align import SubstitutionMatrix
 
+# --- Canonicalize non‑standard residues for sequence generation -----------------
+# Extend Biotite's 3→1 map so `load_coords()` can create a 20‑AA sequence string.
+# Geometry is unchanged; only the 1‑letter code used by the model is normalized.
+try:
+    from biotite.sequence import ProteinSequence
+
+    # Internal map used by Biotite's convert_letter_3to1
+    _m = ProteinSequence._dict_3to1  # type: ignore[attr-defined]
+
+    # A small, safe base map (you can extend this further if needed)
+    CANON_MAP = {
+        # Phospho‑residues
+        "SEP": "S", "TPO": "T", "PTR": "Y",
+        # Selenium / uncommon amino acids → closest canonical
+        "MSE": "M", "SEC": "C", "PYL": "K",
+        # Cys variants
+        "CSO": "C", "CSD": "C", "CME": "C", "CYX": "C", "CSS": "C",
+        # His protonation/tautomers
+        "HIP": "H", "HIE": "H", "HID": "H",
+        # Asp/Glu protonated
+        "ASH": "D", "GLH": "E",
+        # Oxidations / hydroxy
+        "MHO": "M", "HYP": "P",
+        # Common N/C‑terminal caps (ignored in sequence semantics)
+        "ACE": "X", "NME": "X",
+    }
+
+    for k, v in CANON_MAP.items():
+        _m.setdefault(k, v)
+
+    # --- User substitutions: 3→3 then derive 3→1 --------------------------------
+    SUBSTITUTIONS_3TO3: Dict[str, str] = {
+        '2AS':'ASP', '3AH':'HIS', '5HP':'GLU', 'ACL':'ARG', 'AGM':'ARG', 'AIB':'ALA', 'ALM':'ALA', 'ALO':'THR', 'ALY':'LYS', 'ARM':'ARG',
+        'ASA':'ASP', 'ASB':'ASP', 'ASK':'ASP', 'ASL':'ASP', 'ASQ':'ASP', 'AYA':'ALA', 'BCS':'CYS', 'BHD':'ASP', 'BMT':'THR', 'BNN':'ALA',
+        'BUC':'CYS', 'BUG':'LEU', 'C5C':'CYS', 'C6C':'CYS', 'CAS':'CYS', 'CCS':'CYS', 'CEA':'CYS', 'CGU':'GLU', 'CHG':'ALA', 'CLE':'LEU', 'CME':'CYS',
+        'CSD':'ALA', 'CSO':'CYS', 'CSP':'CYS', 'CSS':'CYS', 'CSW':'CYS', 'CSX':'CYS', 'CXM':'MET', 'CY1':'CYS', 'CY3':'CYS', 'CYG':'CYS',
+        'CYM':'CYS', 'CYQ':'CYS', 'DAH':'PHE', 'DAL':'ALA', 'DAR':'ARG', 'DAS':'ASP', 'DCY':'CYS', 'DGL':'GLU', 'DGN':'GLN', 'DHA':'ALA',
+        'DHI':'HIS', 'DIL':'ILE', 'DIV':'VAL', 'DLE':'LEU', 'DLY':'LYS', 'DNP':'ALA', 'DPN':'PHE', 'DPR':'PRO', 'DSN':'SER', 'DSP':'ASP',
+        'DTH':'THR', 'DTR':'TRP', 'DTY':'TYR', 'DVA':'VAL', 'EFC':'CYS', 'FLA':'ALA', 'FME':'MET', 'GGL':'GLU', 'GL3':'GLY', 'GLZ':'GLY',
+        'GMA':'GLU', 'GSC':'GLY', 'HAC':'ALA', 'HAR':'ARG', 'HIC':'HIS', 'HIP':'HIS', 'HMR':'ARG', 'HPQ':'PHE', 'HTR':'TRP', 'HYP':'PRO',
+        'IAS':'ASP', 'IIL':'ILE', 'IYR':'TYR', 'KCX':'LYS', 'LLP':'LYS', 'LLY':'LYS', 'LTR':'TRP', 'LYM':'LYS', 'LYZ':'LYS', 'MAA':'ALA', 'MEN':'ASN',
+        'MHS':'HIS', 'MIS':'SER', 'MLE':'LEU', 'MPQ':'GLY', 'MSA':'GLY', 'MSE':'MET', 'MVA':'VAL', 'NEM':'HIS', 'NEP':'HIS', 'NLE':'LEU',
+        'NLN':'LEU', 'NLP':'LEU', 'NMC':'GLY', 'OAS':'SER', 'OCS':'CYS', 'OMT':'MET', 'PAQ':'TYR', 'PCA':'GLU', 'PEC':'CYS', 'PHI':'PHE',
+        'PHL':'PHE', 'PR3':'CYS', 'PRR':'ALA', 'PTR':'TYR', 'PYX':'CYS', 'SAC':'SER', 'SAR':'GLY', 'SCH':'CYS', 'SCS':'CYS', 'SCY':'CYS',
+        'SEL':'SER', 'SEP':'SER', 'SET':'SER', 'SHC':'CYS', 'SHR':'LYS', 'SMC':'CYS', 'SOC':'CYS', 'STY':'TYR', 'SVA':'SER', 'TIH':'ALA',
+        'TPL':'TRP', 'TPO':'THR', 'TPQ':'ALA', 'TRG':'LYS', 'TRO':'TRP', 'TYB':'TYR', 'TYI':'TYR', 'TYQ':'TYR', 'TYS':'TYR', 'TYY':'TYR'
+    }
+
+    _STD_3TO1: Dict[str, str] = {
+        'ALA':'A','ARG':'R','ASN':'N','ASP':'D','CYS':'C','GLN':'Q','GLU':'E','GLY':'G',
+        'HIS':'H','ILE':'I','LEU':'L','LYS':'K','MET':'M','PHE':'F','PRO':'P','SER':'S',
+        'THR':'T','TRP':'W','TYR':'Y','VAL':'V'
+    }
+
+    _added_subs = 0
+    for k3, v3 in SUBSTITUTIONS_3TO3.items():
+        v1 = _STD_3TO1.get(v3.upper())
+        if v1 and k3 not in _m:
+            _m[k3] = v1
+            _added_subs += 1
+    # Optional debug:
+    # print(f"[canon] added {_added_subs} entries derived from SUBSTITUTIONS_3TO3")
+
+except Exception:
+    # If Biotite internals change, fall back gracefully.
+    pass
+# -----------------------------------------------------------------------------
 
 def derive_uniprot_id(struct_path: Path) -> str:
     """Return the UniProt ID (parent folder name) for indexing.
