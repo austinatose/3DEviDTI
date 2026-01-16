@@ -7,10 +7,16 @@ Create the Conda environment (macOS, Linux, or Windows with CPU/GPU):
 
 ```bash
 conda env create -f environment.yml
-conda activate 3DICE
+conda activate SRP
 ```
 
-The environment includes `fair-esm`, `rdkit`, `unimol-tools`, `yacs`, `sklearn`.
+Model dependencies (from [environment.yml](environment.yml)):
+- Core: PyTorch (`torch`), NumPy, pandas
+- Protein embeddings: `fair-esm`, `biotite`, `gemmi`
+- Drug embeddings: `unimol-tools`, `rdkit`
+- GNN/graph utilities: `torch-geometric`, `torch-scatter`
+- Config + metrics: `yacs`, `scikit-learn`
+- Plotting + utilities: `matplotlib`, `tqdm`
 
 
 ### 2) Data Layout
@@ -23,7 +29,7 @@ The environment includes `fair-esm`, `rdkit`, `unimol-tools`, `yacs`, `sklearn`.
 - Protein embeddings: [embeddings/](embeddings/)
 	- Per-Protein folder: `embeddings/{uniprot_id}/...`
 	- Latest `*.pt` file in each folder is loaded as the token sequence (e.g., per-residue 512-D vectors).
-	- **Protein embeddings must be computed with Python 3.8**
+	- **Protein embeddings should be computed with Python 3.10 (see ESM‑IF1 section)**
 
 - Drug embeddings: [drug/embeddings_atomic/](drug/embeddings_atomic/)
 	- Per-Drug file: `{drug_id}.pt` or `{drug_id}_unimol.pt` (contains `atomic_reprs` → reshaped to `(L_atoms, 512)`).
@@ -93,9 +99,9 @@ Flags (selected)
 
 Tip: For macOS poster-quality exports, the script sets larger fonts and DPI when `--plot_style poster`.
 
-## ESM‑IF1 Embeddings (Python 3.8)
+## ESM‑IF1 Embeddings (Python 3.10)
 
-ESM‑IF1 (inverse folding) embeddings are structure‑conditioned per‑residue features (512‑D) computed from PDB/mmCIF backbones. We create a separate Python 3.8 env for maximum compatibility with `fair-esm` and geometry parsers.
+ESM‑IF1 (inverse folding) embeddings are structure‑conditioned per‑residue features (512‑D) computed from PDB/mmCIF backbones. We create a separate Python 3.10 env for maximum compatibility with `fair-esm` and geometry parsers.
 
 Environment (separate env)
 ```bash
