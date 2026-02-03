@@ -14,71 +14,7 @@ from dataset import MyDataset, collate_fn, KIBADataset
 from model import Model
 
 import torch
-import torch.nn.functional as F
-
-def dirichlet_kl_to_uniform(alpha):
-    """
-    KL(Dir(alpha) || Dir(1,...,1)) per sample.
-    alpha: (B, K), all > 0
-    returns: (B, 1)
-    """
-    beta = torch.ones_like(alpha)
-    S_alpha = alpha.sum(dim=-1, keepdim=True)
-    S_beta = beta.sum(dim=-1, keepdim=True)
-
-    # log B(·)
-    log_B_alpha = torch.lgamma(alpha).sum(dim=-1, keepdim=True) - torch.lgamma(S_alpha)
-    log_B_beta  = torch.lgamma(beta).sum(dim=-1, keepdim=True) - torch.lgamma(S_beta)
-
-    # KL = log B(beta) - log B(alpha) + sum((alpha-beta)(ψ(alpha) - ψ(S_alpha)))
-    digamma_alpha = torch.digamma(alpha)
-    digamma_S_alpha = torch.digamma(S_alpha)
-
-    kl = (log_B_beta - log_B_alpha
-          + ((alpha - beta) * (digamma_alpha - digamma_S_alpha)).sum(dim=-1, keepdim=True))
-    return kl
-
-
-def dirichlet_loss(alphas, y, lam=0.1):
-    """
-    Sensoy-style evidential loss:
-      L = |y - p|^2 + p(1-p)/(S+1) + λ * KL(Dir(alpha_hat) || Dir(1))
-
-    y:      (B,) int labels OR (B, K) one-hot labels
-    alphas: (B, K) positive Dirichlet parameters (evidence + 1)
-    lam:    coefficient for KL term
-    """
-    B, K = alphas.shape
-
-    # Make y one-hot
-    if y.dim() == 1:
-        y_one_hot = F.one_hot(y.long(), num_classes=K).float()
-    else:
-        y_one_hot = y.float()
-
-    y_one_hot = y_one_hot.to(alphas.device)
-
-    # Dirichlet mean
-    S = alphas.sum(dim=-1, keepdim=True)      # (B,1)
-    p = alphas / S                            # (B,K)
-
-    # Squared error + variance term
-    A = ((y_one_hot - p) ** 2).sum(dim=-1, keepdim=True)
-    B_term = (p * (1 - p) / (S + 1)).sum(dim=-1, keepdim=True)
-    sos = A + B_term                          # (B,1)
-
-    # Regularization KL term
-    alpha_hat = y_one_hot + (1 - y_one_hot) * alphas
-    # kl_reg = lam * dirichlet_kl_to_uniform(alpha_hat)  # (B,1)
-
-    kl_reg = dirichlet_kl_to_uniform(alpha_hat)  # (B,1)
-    error_weight = A.detach()    # or A.detach() / A.detach().mean().clamp_min(1e-6)
-    # print("Error weight:", error_weight)
-    reg = lam * error_weight * kl_reg
-    # print("KL reg:", reg)
-
-    loss = sos + reg                       # (B,1)
-    return loss.mean()              # scalar
+import torch.nn.functional as F         # scalar
 
 class Solver:
     def __init__(self, model, cfg, device, optim, loss_fn, eval):
