@@ -65,7 +65,7 @@ Outputs
 
 Adjust training config in [config/cfg.py](config/cfg.py):
 - `SOLVER.BATCH_SIZE`, `SOLVER.EPOCHS`, `SOLVER.LR`, `SOLVER.WEIGHT_DECAY`, `SOLVER.DROPOUT`
-- `SOLVER.LOSS_FN`: `"cross_entropy"` (default) or `"dirichlet_loss"` (evidential)
+- `SOLVER.LOSS_FN`: `"cross_entropy"`
 - Model dims: `DRUG.*`, `PROTEIN.*`, `MLP.*`
 
 ### 5) Evaluate
