@@ -1,9 +1,9 @@
-# 3DICE: Interpretable 3D Cross-Modal Learning for Drug–Target Interaction
+# 3DICE: Interpretable 3D Cross-Modal Learning for Drug–Target Interaction Prediction
 
 ## Quick Start
 
 ### 1) Environment
-Create the Conda environment (macOS, Linux, or Windows with CPU/GPU):
+Create the Conda environment:
 
 ```bash
 conda env create -f environment.yml
@@ -97,8 +97,6 @@ Flags (selected)
 - `--atom_labels {none,topk,all}` and `--label_with_weight`: control py3Dmol labeling in 3D views.
 - `--save_plots`, `--save_dir`, `--save_formats`: persist figures for papers/posters.
 
-Tip: For macOS poster-quality exports, the script sets larger fonts and DPI when `--plot_style poster`.
-
 ## ESM‑IF1 Embeddings (Python 3.10)
 
 ESM‑IF1 (inverse folding) embeddings are structure‑conditioned per‑residue features (512‑D) computed from PDB/mmCIF backbones. We create a separate Python 3.10 env for maximum compatibility with `fair-esm` and geometry parsers.
@@ -108,10 +106,7 @@ Environment (separate env)
 conda create -n 3DICE-ESMIF1 python=3.10 -y
 conda activate 3DICE-ESMIF1
 
-# Install PyTorch matching your platform (CUDA/MPS/CPU)
 pip install torch torchvision torchaudio
-
-# ESM, Biotite (structure parsing), and helpers
 pip install fair-esm biotite gemmi tqdm numpy pandas
 ```
 
