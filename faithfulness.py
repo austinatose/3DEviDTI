@@ -698,7 +698,7 @@ if __name__ == "__main__":
     model.eval()
 
     # ---- dataset/dataloader (same style as attentiontest.py) ----
-    test_ds = MyDataset('lists/db_test.csv', cfg.DATA.PROTEIN_DIR, 'drug/embeddings_atomic')
+    test_ds = MyDataset('lists/db_train.csv', cfg.DATA.PROTEIN_DIR, 'drug/embeddings_atomic')
     test_dl = DataLoader(test_ds, batch_size=1, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=False)
 
     samples = _build_samples_from_loader(test_dl, device=DEVICE, max_samples=args.max_samples)
