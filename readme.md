@@ -1,9 +1,11 @@
-# 3DICE: Interpretable 3D Cross-Modal Learning for Drug–Target Interaction
+# 3DICE: Interpretable 3D Cross-Modal Learning for Drug–Target Interaction Prediction
+
+Drug–target interaction (DTI) prediction is a crucial step in modern drug discovery. Accurate and efficient predictions can substantially reduce costs and development time. Applications of deep learning methods for this purpose have been extensively studied in recent years, yielding instrumental contributions to this field. However, existing methods face issues pertaining to efficient learning of drug and target feature representations, which is detrimental to generalisability and performance in cold-start scenarios. Most approaches extract representations from SMILES strings for drugs and FASTA sequences for target proteins, which encode limited 3D structural information.  Additionally, many models lack explainability, being black boxes that provide little physical insight into the underlying mechanisms behind such interactions. To address these limitations, we propose 3DICE, a novel framework leveraging cross-attention-based fusion and massively pre-trained 3D structural encoders for both drugs and proteins. UniMol and ESM-IF1 are employed to generate high-fidelity, 3D structure-aware embeddings which enable richer geometric and chemical understanding. Cross-modal fusion modules further augment representations to model intermolecular binding relationships. Importantly, this mechanism also provides intrinsic interpretability, highlighting and enabling qualitative analysis of most influential atoms or residues. Experiments conducted on two canonical benchmark datasets display the competitiveness of our model in real-world scenarios. 3DICE outperformed state-of-the-art models across multiple metrics on the DrugBank and KIBA datasets. Additional experiments provide a more rigorous analysis of interpretability than is typically reported in prior DTI studies, and we find that attention consistently highlights decision-critical regions which is not intrinsically class-specific. 
 
 ## Quick Start
 
 ### 1) Environment
-Create the Conda environment (macOS, Linux, or Windows with CPU/GPU):
+Create the Conda environment:
 
 ```bash
 conda env create -f environment.yml
@@ -97,8 +99,6 @@ Flags (selected)
 - `--atom_labels {none,topk,all}` and `--label_with_weight`: control py3Dmol labeling in 3D views.
 - `--save_plots`, `--save_dir`, `--save_formats`: persist figures for papers/posters.
 
-Tip: For macOS poster-quality exports, the script sets larger fonts and DPI when `--plot_style poster`.
-
 ## ESM‑IF1 Embeddings (Python 3.10)
 
 ESM‑IF1 (inverse folding) embeddings are structure‑conditioned per‑residue features (512‑D) computed from PDB/mmCIF backbones. We create a separate Python 3.10 env for maximum compatibility with `fair-esm` and geometry parsers.
@@ -108,10 +108,7 @@ Environment (separate env)
 conda create -n 3DICE-ESMIF1 python=3.10 -y
 conda activate 3DICE-ESMIF1
 
-# Install PyTorch matching your platform (CUDA/MPS/CPU)
 pip install torch torchvision torchaudio
-
-# ESM, Biotite (structure parsing), and helpers
 pip install fair-esm biotite gemmi tqdm numpy pandas
 ```
 
