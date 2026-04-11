@@ -18,7 +18,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Inspect attention for a specific (drug_id, uniprot_id) pair")
 parser.add_argument("--ckpt", type=str, default="saved/cnn321_epoch_58.pt", help="Path to checkpoint")
 parser.add_argument("--device", type=str, default="cpu", help="cpu/cuda/mps")
-parser.add_argument("--csv", type=str, default="lists/db_train.csv", help="CSV file to search")
+parser.add_argument("--csv", type=str, default="lists/db_test.csv", help="CSV file to search")
 parser.add_argument("--drug_id", type=str, default=None, help="DrugBank ID to find (e.g., DB00001)")
 parser.add_argument("--uniprot_id", type=str, default=None, help="UniProt ID to find (e.g., P00533)")
 parser.add_argument("--max_search", type=int, default=20000, help="Max batches to scan for the pair")

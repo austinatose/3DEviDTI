@@ -130,13 +130,49 @@ def coattention_inter_map(attn_p: np.ndarray, attn_d: np.ndarray, eps: float = 1
     return inter
 
 
-RankMethod = Literal["directional", "symmetric"]
+RankMethod = Literal["directional", "symmetric", "joint"]
+JointMode = Literal["geom", "arith", "harm", "prod", "min"]
+
+
+def compute_joint_map(
+    attn_p: np.ndarray,
+    attn_d: np.ndarray,
+    mode: JointMode = "geom",
+    eps: float = 1e-12,
+) -> np.ndarray:
+    """Compute a joint residue↔atom score from directional attentions.
+
+    Modes mirror attentiontest.py:
+        geom: sqrt(p*d)
+        arith: (p+d)/2
+        harm: 2pd/(p+d)
+        prod: p*d
+        min: min(p,d)
+    """
+    p = np.asarray(attn_p, dtype=float)
+    d = np.asarray(attn_d, dtype=float).T
+    if p.shape != d.shape:
+        raise ValueError(f"Shape mismatch: attn_p {p.shape} vs attn_d.T {d.shape}")
+
+    if mode == "geom":
+        return np.sqrt(np.maximum(p, 0.0) * np.maximum(d, 0.0) + eps)
+    if mode == "arith":
+        return 0.5 * (p + d)
+    if mode == "harm":
+        return (2.0 * p * d) / (p + d + eps)
+    if mode == "prod":
+        return p * d
+    if mode == "min":
+        return np.minimum(p, d)
+
+    raise ValueError(f"Unknown joint mode: {mode}")
 
 def rank_from_attention(
     attn_p: np.ndarray,
     attn_d: np.ndarray,
     mode: Mode,
     method: RankMethod = "directional",
+    joint_mode: JointMode = "prod",
     agg: Literal["sum", "mean"] = "sum",
 ) -> np.ndarray:
     """Rank protein residues or drug atoms from attention.
@@ -165,8 +201,8 @@ def rank_from_attention(
             f"got {ap.shape} and {ad.shape}"
         )
 
-    if method == "symmetric":
-        inter = coattention_inter_map(ap, ad)
+    if method in {"symmetric", "joint"}:
+        inter = coattention_inter_map(ap, ad) if method == "symmetric" else compute_joint_map(ap, ad, mode=joint_mode)
         if mode == "protein":
             score = inter.sum(axis=1)
         elif mode == "drug":
@@ -256,6 +292,7 @@ class FaithfulnessScorer:
         forward_with_attn_fn: Optional[Callable[[Sample], Tuple["Tensor", np.ndarray, np.ndarray]]] = None,
         device: Optional[str] = None,
         rank_method: RankMethod = "directional",
+        joint_mode: JointMode = "geom",
     ):
         if torch is None:
             raise ImportError("PyTorch is required for faithfulness.py")
@@ -263,6 +300,7 @@ class FaithfulnessScorer:
         self.forward_with_attn_fn = forward_with_attn_fn
         self.device = device
         self.rank_method = rank_method
+        self.joint_mode = joint_mode
 
     def _ensure_device(self, sample: Sample) -> Sample:
         if self.device is None:
@@ -320,7 +358,13 @@ class FaithfulnessScorer:
 
         # co-attention ranking
         score0, ap, ad = self._score_and_attn(sample)
-        ranked = rank_from_attention(ap, ad, mode=mode, method=self.rank_method)
+        ranked = rank_from_attention(
+            ap,
+            ad,
+            mode=mode,
+            method=self.rank_method,
+            joint_mode=self.joint_mode,
+        )
         ranked = ranked[np.isin(ranked, valid)]
         return ranked[:L]
         return ranked
@@ -832,17 +876,17 @@ if __name__ == "__main__":
         )
         plot_curve(res_p_del_pos, title="Protein deletion (POS)")
 
-    # if len(samples_neg) >= 2:
-    #     res_p_del_neg = scorer.evaluate_dataset(
-    #         samples=samples_neg,
-    #         mode="protein",
-    #         test_type="deletion",
-    #         fractions=fractions,
-    #         n_random=args.n_random,
-    #         seed=0,
-    #         normalize_to_baseline=True,
-    #     )
-    #     plot_curve(res_p_del_neg, title="Protein deletion (NEG)")
+    if len(samples_neg) >= 2:
+        res_p_del_neg = scorer.evaluate_dataset(
+            samples=samples_neg,
+            mode="protein",
+            test_type="deletion",
+            fractions=fractions,
+            n_random=args.n_random,
+            seed=0,
+            normalize_to_baseline=True,
+        )
+        plot_curve(res_p_del_neg, title="Protein deletion (NEG)")
 
     # ---- Drug-side deletion (ALL / POS / NEG) ----
     # res_d_del_all = scorer.evaluate_dataset(
@@ -856,29 +900,29 @@ if __name__ == "__main__":
     # )
     # plot_curve(res_d_del_all, title=f"Faithfulness: Drug deletion (ALL, Δ{args.score_mode})")
 
-    # if len(samples_pos) >= 2:
-    #     res_d_del_pos = scorer.evaluate_dataset(
-    #         samples=samples_pos,
-    #         mode="drug",
-    #         test_type="deletion",
-    #         fractions=fractions,
-    #         n_random=args.n_random,
-    #         seed=0,
-    #         normalize_to_baseline=True,
-    #     )
-    #     plot_curve(res_d_del_pos, title="Drug deletion (POS)")
+    if len(samples_pos) >= 2:
+        res_d_del_pos = scorer.evaluate_dataset(
+            samples=samples_pos,
+            mode="drug",
+            test_type="deletion",
+            fractions=fractions,
+            n_random=args.n_random,
+            seed=0,
+            normalize_to_baseline=True,
+        )
+        plot_curve(res_d_del_pos, title="Drug deletion (POS)")
 
-    # if len(samples_neg) >= 2:
-    #     res_d_del_neg = scorer.evaluate_dataset(
-    #         samples=samples_neg,
-    #         mode="drug",
-    #         test_type="deletion",
-    #         fractions=fractions,
-    #         n_random=args.n_random,
-    #         seed=0,
-    #         normalize_to_baseline=True,
-    #     )
-    #     plot_curve(res_d_del_neg, title="Drug deletion (NEG)")
+    if len(samples_neg) >= 2:
+        res_d_del_neg = scorer.evaluate_dataset(
+            samples=samples_neg,
+            mode="drug",
+            test_type="deletion",
+            fractions=fractions,
+            n_random=args.n_random,
+            seed=0,
+            normalize_to_baseline=True,
+        )
+        plot_curve(res_d_del_neg, title="Drug deletion (NEG)")
 
     # Optional: insertion tests (uncomment if desired)
     # res_p_ins = scorer.evaluate_dataset(samples=samples, mode="protein", test_type="insertion", fractions=fractions, n_random=args.n_random)

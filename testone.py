@@ -41,6 +41,10 @@ def _load_drug_embedding(path: str) -> Tuple[torch.Tensor, Optional[np.ndarray]]
 	return emb, None
 
 
+def _trim_sep(emb: torch.Tensor) -> torch.Tensor:
+    return emb[:-1, :] if emb.size(0) > 1 else emb
+
+
 def compute_joint_map(attn_p: np.ndarray, attn_d: np.ndarray, mode: str = "geom", eps: float = 1e-12) -> np.ndarray:
 	d = attn_d.T
 	p = attn_p
@@ -95,7 +99,7 @@ def main() -> None:
     parser.add_argument(
         "--joint_mode",
         type=str,
-        default="geom",
+        default="prod",
         choices=["geom", "arith", "harm", "prod", "min"],
     )
     parser.add_argument("--top_k", type=int, default=20)
@@ -104,8 +108,9 @@ def main() -> None:
     cfg = get_cfg_defaults()
     device = torch.device(args.device)
 
-    protein_emb = _load_protein_embedding(args.protein_emb)
+    protein_emb = _trim_sep(_load_protein_embedding(args.protein_emb))
     drug_emb, atom_labels = _load_drug_embedding(args.drug_emb)
+    drug_emb = _trim_sep(drug_emb)
 
     ckpt = torch.load(args.ckpt, map_location=device, weights_only=False)
     model = Model(cfg=cfg)

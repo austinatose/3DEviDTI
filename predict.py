@@ -95,65 +95,70 @@ def main() -> None:
 
 	positives = 0
 	total = 0
+	positive_rows: list[tuple[str, float, str]] = []
+
+	with torch.no_grad():
+		for start in tqdm(range(0, len(drug_paths), args.batch_size)):
+			batch_paths = drug_paths[start : start + args.batch_size]
+			drug_embs = []
+			drug_ids = []
+			kept_paths = []
+
+			for path in batch_paths:
+				try:
+					drug_emb = trim_sep(load_drug_embedding(path))
+				except Exception as exc:
+					print(f"[warn] skipping {path}: {exc}")
+					continue
+				drug_embs.append(drug_emb)
+				drug_ids.append(drug_id_from_path(path))
+				kept_paths.append(path)
+
+			if not drug_embs:
+				continue
+
+			drug_padded = torch.nn.utils.rnn.pad_sequence(drug_embs, batch_first=True)
+			drug_lens = torch.tensor([t.size(0) for t in drug_embs], dtype=torch.long)
+			drug_mask = torch.arange(drug_padded.size(1)).unsqueeze(0) >= drug_lens.unsqueeze(1)
+
+			protein_batch = protein_emb.unsqueeze(0).repeat(len(drug_embs), 1, 1)
+			protein_mask = torch.zeros((len(drug_embs), protein_len), dtype=torch.bool)
+
+			protein_batch = protein_batch.to(device)
+			drug_padded = drug_padded.to(device)
+			protein_mask = protein_mask.to(device)
+			drug_mask = drug_mask.to(device)
+
+			outputs = model(
+				protein_batch,
+				drug_padded,
+				protein_mask=protein_mask,
+				drug_mask=drug_mask,
+				mode="test",
+			)
+
+			if args.output_mode == "ce":
+				probs = F.softmax(outputs, dim=1)[:, 1]
+			else:
+				alphas = outputs
+				sum_alpha = alphas.sum(dim=1)
+				probs = alphas[:, 1] / sum_alpha
+
+			probs = probs.detach().cpu().numpy().tolist()
+
+			for drug_id, prob_pos, path in zip(drug_ids, probs, kept_paths):
+				total += 1
+				if prob_pos >= args.threshold:
+					positives += 1
+					positive_rows.append((drug_id, prob_pos, path))
+
+	positive_rows.sort(key=lambda row: row[1], reverse=True)
 
 	with open(out_path, "w", newline="") as f:
 		writer = csv.writer(f)
 		writer.writerow(["drug_id", "prob_pos", "drug_path"])
-
-		with torch.no_grad():
-			for start in tqdm(range(0, len(drug_paths), args.batch_size)):
-				batch_paths = drug_paths[start : start + args.batch_size]
-				drug_embs = []
-				drug_ids = []
-				kept_paths = []
-
-				for path in batch_paths:
-					try:
-						drug_emb = trim_sep(load_drug_embedding(path))
-					except Exception as exc:
-						print(f"[warn] skipping {path}: {exc}")
-						continue
-					drug_embs.append(drug_emb)
-					drug_ids.append(drug_id_from_path(path))
-					kept_paths.append(path)
-
-				if not drug_embs:
-					continue
-
-				drug_padded = torch.nn.utils.rnn.pad_sequence(drug_embs, batch_first=True)
-				drug_lens = torch.tensor([t.size(0) for t in drug_embs], dtype=torch.long)
-				drug_mask = torch.arange(drug_padded.size(1)).unsqueeze(0) >= drug_lens.unsqueeze(1)
-
-				protein_batch = protein_emb.unsqueeze(0).repeat(len(drug_embs), 1, 1)
-				protein_mask = torch.zeros((len(drug_embs), protein_len), dtype=torch.bool)
-
-				protein_batch = protein_batch.to(device)
-				drug_padded = drug_padded.to(device)
-				protein_mask = protein_mask.to(device)
-				drug_mask = drug_mask.to(device)
-
-				outputs = model(
-					protein_batch,
-					drug_padded,
-					protein_mask=protein_mask,
-					drug_mask=drug_mask,
-					mode="test",
-				)
-
-				if args.output_mode == "ce":
-					probs = F.softmax(outputs, dim=1)[:, 1]
-				else:
-					alphas = outputs
-					sum_alpha = alphas.sum(dim=1)
-					probs = alphas[:, 1] / sum_alpha
-
-				probs = probs.detach().cpu().numpy().tolist()
-
-				for drug_id, prob_pos, path in zip(drug_ids, probs, kept_paths):
-					total += 1
-					if prob_pos >= args.threshold:
-						positives += 1
-						writer.writerow([drug_id, f"{prob_pos:.6f}", path])
+		for drug_id, prob_pos, path in positive_rows:
+			writer.writerow([drug_id, f"{prob_pos:.6f}", path])
 
 	print(f"Processed {total} drugs. Positives: {positives}.")
 	print(f"Positive log written to: {out_path}")
