@@ -51,6 +51,30 @@ def find_pt_files(emb_root, uniprot_id):
     return sorted(glob.glob(pattern))
 
 
+def build_protein_path_index(emb_root, uniprot_ids):
+    index = {}
+    for uniprot_id in set(map(str, uniprot_ids)):
+        files = find_pt_files(emb_root, uniprot_id)
+        if files:
+            index[uniprot_id] = files[-1]
+    return index
+
+
+def build_drug_path_index(drug_dir, drug_ids, *, allow_unimol_suffix: bool):
+    index = {}
+    for drug_id in set(map(str, drug_ids)):
+        candidates = [f"{drug_id}.pt"]
+        if allow_unimol_suffix:
+            candidates.insert(0, f"{drug_id}_unimol.pt")
+
+        for filename in candidates:
+            path = os.path.join(drug_dir, filename)
+            if os.path.exists(path):
+                index[drug_id] = path
+                break
+    return index
+
+
 class MyDataset(Dataset):
     def __init__(self, csv_path, protein_dir, drug_dir, *,
                  prot_cache_size: int = 0,
@@ -94,6 +118,9 @@ class MyDataset(Dataset):
                     self.drug_ids.append(str(row["drug_id"]))
                     self.labels.append(int(row["interaction"]))
 
+        self.protein_paths = build_protein_path_index(self.protein_dir, self.uniprot_ids)
+        self.drug_paths = build_drug_path_index(self.drug_dir, self.drug_ids, allow_unimol_suffix=True)
+
         # Configure tiny LRU caches (or disable if size == 0)
         if prot_cache_size > 0:
             self._get_prot = lru_cache(maxsize=prot_cache_size)(self._load_prot)
@@ -127,13 +154,16 @@ class MyDataset(Dataset):
         }
 
     def _load_prot(self, uniprot_id: str):
-        files = find_pt_files(self.protein_dir, str(uniprot_id))
-        if not files:
-            raise FileNotFoundError(
-                f"No .pt files found for uniprot_id='{uniprot_id}' in {self.protein_dir}"
-            )
-        # Use the last (alphabetically latest) match
-        path = files[-1]
+        key = str(uniprot_id)
+        path = self.protein_paths.get(key)
+        if path is None:
+            files = find_pt_files(self.protein_dir, key)
+            if not files:
+                raise FileNotFoundError(
+                    f"No .pt files found for uniprot_id='{uniprot_id}' in {self.protein_dir}"
+                )
+            path = files[-1]
+            self.protein_paths[key] = path
         # If the file stores a plain tensor, weights_only=True avoids loading extraneous pickled objects
         emb = torch.load(path, map_location="cpu", weights_only=True)
         # Ensure float32 tensor and contiguous memory layout
@@ -143,11 +173,15 @@ class MyDataset(Dataset):
         return emb
 
     def _load_drug(self, drug_id: str):
-        path = os.path.join(self.drug_dir, f"{drug_id}_unimol.pt")
-        if not os.path.exists(path):
-            path = os.path.join(self.drug_dir, f"{drug_id}.pt")
+        key = str(drug_id)
+        path = self.drug_paths.get(key)
+        if path is None:
+            path = os.path.join(self.drug_dir, f"{key}_unimol.pt")
             if not os.path.exists(path):
-                raise FileNotFoundError(f"Drug embedding not found: {path}")
+                path = os.path.join(self.drug_dir, f"{key}.pt")
+                if not os.path.exists(path):
+                    raise FileNotFoundError(f"Drug embedding not found for drug_id='{drug_id}' in {self.drug_dir}")
+            self.drug_paths[key] = path
         d = torch.load(path, map_location="cpu", weights_only=False)
         arr = np.asarray(d["atomic_reprs"], dtype=np.float32).reshape(-1, 512)
         # Drop the dict promptly to free RAM; keep only the tensor view
@@ -228,6 +262,9 @@ class stdDataset(Dataset):
                     self.drug_ids.append(str(row["drug_id"]))
                     self.labels.append(int(row["interaction"]))
 
+        self.protein_paths = build_protein_path_index(self.protein_dir, self.uniprot_ids)
+        self.drug_paths = build_drug_path_index(self.drug_dir, self.drug_ids, allow_unimol_suffix=True)
+
         # Configure tiny LRU caches (or disable if size == 0)
         if prot_cache_size > 0:
             self._get_prot = lru_cache(maxsize=prot_cache_size)(self._load_prot)
@@ -258,13 +295,16 @@ class stdDataset(Dataset):
         }, label)
 
     def _load_prot(self, uniprot_id: str):
-        files = find_pt_files(self.protein_dir, str(uniprot_id))
-        if not files:
-            raise FileNotFoundError(
-                f"No .pt files found for uniprot_id='{uniprot_id}' in {self.protein_dir}"
-            )
-        # Use the last (alphabetically latest) match
-        path = files[-1]
+        key = str(uniprot_id)
+        path = self.protein_paths.get(key)
+        if path is None:
+            files = find_pt_files(self.protein_dir, key)
+            if not files:
+                raise FileNotFoundError(
+                    f"No .pt files found for uniprot_id='{uniprot_id}' in {self.protein_dir}"
+                )
+            path = files[-1]
+            self.protein_paths[key] = path
         # If the file stores a plain tensor, weights_only=True avoids loading extraneous pickled objects
         emb = torch.load(path, map_location="cpu", weights_only=True)
         # Ensure float32 tensor and contiguous memory layout
@@ -274,11 +314,15 @@ class stdDataset(Dataset):
         return emb
 
     def _load_drug(self, drug_id: str):
-        path = os.path.join(self.drug_dir, f"{drug_id}_unimol.pt")
-        if not os.path.exists(path):
-            path = os.path.join(self.drug_dir, f"{drug_id}.pt")
+        key = str(drug_id)
+        path = self.drug_paths.get(key)
+        if path is None:
+            path = os.path.join(self.drug_dir, f"{key}_unimol.pt")
             if not os.path.exists(path):
-                raise FileNotFoundError(f"Drug embedding not found: {path}")
+                path = os.path.join(self.drug_dir, f"{key}.pt")
+                if not os.path.exists(path):
+                    raise FileNotFoundError(f"Drug embedding not found for drug_id='{drug_id}' in {self.drug_dir}")
+            self.drug_paths[key] = path
         d = torch.load(path, map_location="cpu", weights_only=False)
         arr = np.asarray(d["atomic_reprs"], dtype=np.float32).reshape(-1, 512)
         # Drop the dict promptly to free RAM; keep only the tensor view
@@ -319,6 +363,9 @@ class KIBADataset(Dataset):
                     self.drug_ids.append(str(row["drug_id"]))
                     self.labels.append(int(row["interaction"]))
 
+        self.protein_paths = build_protein_path_index(self.protein_dir, self.uniprot_ids)
+        self.drug_paths = build_drug_path_index(self.drug_dir, self.drug_ids, allow_unimol_suffix=False)
+
         # Configure tiny LRU caches (or disable if size == 0)
         if prot_cache_size > 0:
             self._get_prot = lru_cache(maxsize=prot_cache_size)(self._load_prot)
@@ -350,13 +397,16 @@ class KIBADataset(Dataset):
         }
 
     def _load_prot(self, uniprot_id: str):
-        files = find_pt_files(self.protein_dir, str(uniprot_id))
-        if not files:
-            raise FileNotFoundError(
-                f"No .pt files found for uniprot_id='{uniprot_id}' in {self.protein_dir}"
-            )
-        # Use the last (alphabetically latest) match
-        path = files[-1]
+        key = str(uniprot_id)
+        path = self.protein_paths.get(key)
+        if path is None:
+            files = find_pt_files(self.protein_dir, key)
+            if not files:
+                raise FileNotFoundError(
+                    f"No .pt files found for uniprot_id='{uniprot_id}' in {self.protein_dir}"
+                )
+            path = files[-1]
+            self.protein_paths[key] = path
         # If the file stores a plain tensor, weights_only=True avoids loading extraneous pickled objects
         emb = torch.load(path, map_location="cpu", weights_only=True)
         # Ensure float32 tensor and contiguous memory layout
@@ -366,9 +416,13 @@ class KIBADataset(Dataset):
         return emb
 
     def _load_drug(self, drug_id: str):
-        path = os.path.join(self.drug_dir, f"{drug_id}.pt")
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"Drug embedding not found: {path}")
+        key = str(drug_id)
+        path = self.drug_paths.get(key)
+        if path is None:
+            path = os.path.join(self.drug_dir, f"{key}.pt")
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"Drug embedding not found for drug_id='{drug_id}' in {self.drug_dir}")
+            self.drug_paths[key] = path
         d = torch.load(path, map_location="cpu", weights_only=False)
         arr = np.asarray(d["atomic_reprs"], dtype=np.float32).reshape(-1, 512)
         # Drop the dict promptly to free RAM; keep only the tensor view

@@ -210,11 +210,30 @@ model.to(DEVICE)
 
 solver = Solver(model, cfg, device=DEVICE, optim=torch.optim.Adam, loss_fn=cfg.SOLVER.LOSS_FN, eval=None)
 
-test_ds = MyDataset(args.csv, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
+test_ds = MyDataset(
+    args.csv,
+    cfg.DATA.PROTEIN_DIR,
+    cfg.DATA.DRUG_DIR,
+    prot_cache_size=int(getattr(cfg.DATA, "PROT_CACHE_SIZE", 0)),
+    drug_cache_size=int(getattr(cfg.DATA, "DRUG_CACHE_SIZE", 0)),
+)
 # Use deterministic ordering when searching for a specific pair, so listed matches are stable.
 shuffle_flag = False if (args.drug_id is not None or args.uniprot_id is not None) else True
 
-test_dl = DataLoader(test_ds, batch_size=1, shuffle=shuffle_flag, num_workers=0, collate_fn=collate_fn, drop_last=False)
+num_workers = int(getattr(cfg.DATA, "NUM_WORKERS", 0))
+loader_kwargs = {
+    "batch_size": 1,
+    "shuffle": shuffle_flag,
+    "num_workers": num_workers,
+    "collate_fn": collate_fn,
+    "drop_last": False,
+    "pin_memory": bool(getattr(cfg.DATA, "PIN_MEMORY", True)) and str(DEVICE).startswith("cuda"),
+}
+if num_workers > 0:
+    loader_kwargs["persistent_workers"] = bool(getattr(cfg.DATA, "PERSISTENT_WORKERS", True))
+    loader_kwargs["prefetch_factor"] = int(getattr(cfg.DATA, "PREFETCH_FACTOR", 2))
+
+test_dl = DataLoader(test_ds, **loader_kwargs)
 
 
 # ---- label filter helper ----
@@ -323,11 +342,12 @@ else:
             )
 
 set = selected
-labels = set["label"].to(DEVICE)
-protein_emb = set["protein_emb"].to(DEVICE)
-drug_emb = set["drug_emb"].to(DEVICE)
-protein_mask = set["protein_mask"].to(DEVICE)
-drug_mask = set["drug_mask"].to(DEVICE)
+non_blocking = bool(getattr(cfg.DATA, "NON_BLOCKING_DEVICE_TRANSFER", True)) and str(DEVICE).startswith("cuda")
+labels = set["label"].to(DEVICE, non_blocking=non_blocking)
+protein_emb = set["protein_emb"].to(DEVICE, non_blocking=non_blocking)
+drug_emb = set["drug_emb"].to(DEVICE, non_blocking=non_blocking)
+protein_mask = set["protein_mask"].to(DEVICE, non_blocking=non_blocking)
+drug_mask = set["drug_mask"].to(DEVICE, non_blocking=non_blocking)
 drug_id = set["drug_id"]
 protein_id = set["uniprot_id"]
 print("Drug ID:", drug_id)
