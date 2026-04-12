@@ -7,6 +7,8 @@ from config.cfg import get_cfg_defaults
 from solver import Solver
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib
+from pathlib import Path
 
 import py3Dmol
 
@@ -16,7 +18,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Inspect attention for a specific (drug_id, uniprot_id) pair")
 parser.add_argument("--ckpt", type=str, default="saved/cnn321_epoch_58.pt", help="Path to checkpoint")
 parser.add_argument("--device", type=str, default="cpu", help="cpu/cuda/mps")
-parser.add_argument("--csv", type=str, default="lists/db_train.csv", help="CSV file to search")
+parser.add_argument("--csv", type=str, default="lists/db_test.csv", help="CSV file to search")
 parser.add_argument("--drug_id", type=str, default=None, help="DrugBank ID to find (e.g., DB00001)")
 parser.add_argument("--uniprot_id", type=str, default=None, help="UniProt ID to find (e.g., P00533)")
 parser.add_argument("--max_search", type=int, default=20000, help="Max batches to scan for the pair")
@@ -71,7 +73,129 @@ parser.add_argument(
     default=None,
     help="Filter by label: 'pos'/'positive'/'1' for positive, 'neg'/'negative'/'0' for negative. If omitted, no label filter.",
 )
+parser.add_argument(
+    "--plot_style",
+    type=str,
+    default="paper",
+    choices=["paper", "poster"],
+    help="Plot style preset. Use 'poster' for A0-ready figures (larger fonts, bigger canvases).",
+)
+parser.add_argument(
+    "--poster_dpi",
+    type=int,
+    default=300,
+    help="DPI used when --plot_style=poster (default 300).",
+)
+parser.add_argument(
+    "--figure_scale",
+    type=float,
+    default=None,
+    help="Global multiplier for figure size (override). Defaults to 2.5 in poster mode, 1.0 otherwise.",
+)
+parser.add_argument(
+    "--save_plots",
+    action="store_true",
+    help="Save all Matplotlib figures to disk (honors poster DPI).",
+)
+parser.add_argument(
+    "--save_dir",
+    type=str,
+    default="plots",
+    help="Directory for saved plots when --save_plots is enabled.",
+)
+parser.add_argument(
+    "--save_formats",
+    type=str,
+    default="png",
+    help="Comma-separated list of file formats to export (e.g., png,pdf,svg).",
+)
 args = parser.parse_args()
+
+# ---- apply plot style presets for poster-quality figures ----
+def _apply_plot_style(style: str, dpi: int = 300):
+    sf_stack = [
+        "SF Pro Display",
+        "SF Pro Text",
+        "SF Pro Rounded",
+        "Helvetica Neue",
+        "Helvetica",
+        "Arial",
+        "sans-serif",
+    ]
+    matplotlib.rcParams["font.family"] = sf_stack[0]
+    matplotlib.rcParams["font.sans-serif"] = sf_stack
+    if style == "poster":
+        matplotlib.rcParams.update({
+            "figure.dpi": dpi,
+            "savefig.dpi": dpi,
+            "font.size": 22,
+            "axes.titlesize": 28,
+            "axes.labelsize": 26,
+            "xtick.labelsize": 20,
+            "ytick.labelsize": 20,
+            "legend.fontsize": 22,
+            "lines.linewidth": 2.5,
+            "axes.linewidth": 2.0,
+            "figure.facecolor": "white",
+            "axes.facecolor": "white",
+        })
+        # Keep vector text for crisp output
+        matplotlib.rcParams["svg.fonttype"] = "none"
+        matplotlib.rcParams["pdf.use14corefonts"] = True
+
+_apply_plot_style(args.plot_style, args.poster_dpi)
+
+# Convenience sizes depending on style
+POSTER = (args.plot_style == "poster")
+BASE_BAR_SIZE = (12.0, 3.0)
+BASE_HEATMAP_SIZE = (8.0, 6.0)
+if args.figure_scale is not None:
+    FIG_SCALE = float(args.figure_scale)
+else:
+    FIG_SCALE = 2.5 if POSTER else 1.0
+
+BAR_FIGSIZE = tuple(FIG_SCALE * v for v in BASE_BAR_SIZE)
+HEATMAP_FIGSIZE = tuple(FIG_SCALE * v for v in BASE_HEATMAP_SIZE)
+TICK_FONTSIZE = 24 if POSTER else 6
+TITLE_PAD = 14 if POSTER else 6
+BAR_AXIS_FONT = 32 if POSTER else 14
+PROT_TICK_MAX = 25 if POSTER else 40
+
+# If labeling atoms and user kept default font, bump for poster
+if POSTER and int(args.label_font) == 11:
+    args.label_font = 24
+
+# ---- tick helper ----
+def _sparse_ticks(length: int, max_labels: int = 30):
+    if length <= 0 or max_labels <= 0:
+        return np.array([], dtype=int)
+    count = min(length, max_labels)
+    ticks = np.linspace(0, length - 1, num=count, dtype=int)
+    return np.unique(ticks)
+
+# ---- figure saving config ----
+SAVE_PLOTS = bool(args.save_plots)
+SAVE_DIR = Path(args.save_dir).expanduser() if SAVE_PLOTS else None
+SAVE_FORMATS = tuple(
+    fmt.strip().lower()
+    for fmt in str(args.save_formats).split(",")
+    if fmt.strip()
+)
+if SAVE_PLOTS:
+    if not SAVE_FORMATS:
+        SAVE_FORMATS = ("png",)
+    SAVE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _save_figure(fig, stem: str):
+    """Save figure using poster DPI and tight bounding boxes."""
+    if not SAVE_PLOTS:
+        return
+    dpi = args.poster_dpi if POSTER else fig.dpi
+    for fmt in SAVE_FORMATS:
+        out_path = (SAVE_DIR / f"{stem}.{fmt}").resolve()
+        fig.savefig(out_path, dpi=dpi, bbox_inches="tight", facecolor=fig.get_facecolor())
+        print(f"[plot] saved {out_path}")
 
 CKPT_PATH = args.ckpt
 DEVICE = args.device
@@ -408,85 +532,105 @@ drug_weights_plot = drug_joint_weights.copy()
 drug_weights_plot[~drug_valid] = 0.0
 
 # Protein bar plot
-plt.figure(figsize=(12, 3))
+fig, ax = plt.subplots(figsize=BAR_FIGSIZE)
 xp = np.arange(len(protein_weights_plot))
-plt.bar(xp, protein_weights_plot)
-plt.xlabel("Protein residue index")
-plt.ylabel(f"Joint mass ({args.joint_mode})")
-plt.title(f"Protein per-residue joint mass  {protein_id} ↔ {drug_id}  ({args.joint_mode})")
+ax.bar(xp, protein_weights_plot)
+ax.set_xlabel("Protein residue index", fontsize=BAR_AXIS_FONT)
+ax.set_ylabel(f"Joint mass ({args.joint_mode})", fontsize=BAR_AXIS_FONT)
+ax.set_title(f"Protein per-residue joint mass  {protein_id} ↔ {drug_id}  ({args.joint_mode})", pad=TITLE_PAD)
 
-# thin ticks
-prot_stride = max(1, int(len(xp) // 50))
-prot_ticks = xp[::prot_stride]
-plt.xticks(prot_ticks, [str(int(t)) for t in prot_ticks], rotation=0, fontsize=6)
-plt.tight_layout()
+# thin ticks (limit labels for readability)
+prot_ticks = _sparse_ticks(len(xp), PROT_TICK_MAX)
+ax.set_xticks(prot_ticks)
+ax.set_xticklabels([str(int(t)) for t in prot_ticks], rotation=0, fontsize=TICK_FONTSIZE)
+ax.tick_params(axis="y", labelsize=TICK_FONTSIZE)
+fig.tight_layout()
+_save_figure(fig, "protein_joint_mass")
 
 # Drug bar plot
-plt.figure(figsize=(12, 3))
+fig, ax = plt.subplots(figsize=BAR_FIGSIZE)
 xd = np.arange(len(drug_weights_plot))
-plt.bar(xd, drug_weights_plot)
-plt.xlabel("Drug atom index")
-plt.ylabel(f"Joint mass ({args.joint_mode})")
-plt.title(f"Drug per-atom joint mass  {protein_id} ↔ {drug_id}  ({args.joint_mode})")
+ax.bar(xd, drug_weights_plot)
+ax.set_xlabel("Drug atom index", fontsize=BAR_AXIS_FONT)
+ax.set_ylabel(f"Joint mass ({args.joint_mode})", fontsize=BAR_AXIS_FONT)
+ax.set_title(f"Drug per-atom joint mass  {protein_id} ↔ {drug_id}  ({args.joint_mode})", pad=TITLE_PAD)
 
 # thin ticks + use atom symbols when possible
 atom_labels_safe = np.array([str(a) for a in atom_labels], dtype=object)
 drug_stride = max(1, int(len(xd) // 50))
 drug_ticks = xd[::drug_stride]
-plt.xticks(
-    drug_ticks,
+ax.set_xticks(drug_ticks)
+ax.set_xticklabels(
     [atom_labels_safe[int(t)] if int(t) < len(atom_labels_safe) else str(int(t)) for t in drug_ticks],
-    rotation=90,
-    fontsize=6,
+    rotation=0,
+    ha="center",
+    fontsize=TICK_FONTSIZE,
 )
-plt.tight_layout()
+ax.tick_params(axis="y", labelsize=TICK_FONTSIZE)
+fig.tight_layout()
+_save_figure(fig, "drug_joint_mass")
 
 # ---- heatmap: protein residues (rows) vs drug atoms (cols) ----
-plt.figure(figsize=(8, 6))
-plt.imshow(attn_p, aspect="auto", interpolation="nearest")
-plt.colorbar(label="Attention weight")
-plt.xlabel("Drug atoms")
-plt.ylabel("Protein residues")
-plt.title(f"{protein_id} Protein queries → drug atoms {drug_id}")
+fig, ax = plt.subplots(figsize=HEATMAP_FIGSIZE)
+img = ax.imshow(attn_p, aspect="auto", interpolation="nearest")
+cb = fig.colorbar(img, ax=ax, pad=0.01, fraction=0.03, shrink=0.9)
+cb.ax.tick_params(labelsize=TICK_FONTSIZE)
+cb.set_label("Attention weight")
+ax.set_xlabel("Drug atoms")
+ax.set_ylabel("Protein residues")
+ax.set_title(f"{protein_id} Protein queries → drug atoms {drug_id}", pad=TITLE_PAD)
 
 # x-axis: label each column by atom symbol
 x_positions = np.arange(attn_p.shape[1])
-plt.xticks(x_positions, atom_labels, rotation=90, fontsize=6)
+ax.set_xticks(x_positions)
+ax.set_xticklabels(atom_labels, rotation=0, ha="center", fontsize=TICK_FONTSIZE)
+ax.tick_params(axis="y", labelsize=TICK_FONTSIZE)
 
 # highlight chosen atom column
-# plt.axvline(highlight_atom_idx, linestyle="--")
+# ax.axvline(highlight_atom_idx, linestyle="--")
 
-plt.tight_layout()
+fig.tight_layout()
+_save_figure(fig, "protein_to_drug_heatmap")
 
 # ---- heatmap: drug atoms (rows) vs protein residues (cols) ----
-plt.figure(figsize=(8, 6))
-plt.imshow(attn_d, aspect="auto", interpolation="nearest")
-plt.colorbar(label="Attention weight")
-plt.xlabel("Protein residues")
-plt.ylabel("Drug atoms")
-plt.title(f"{drug_id} Drug queries → protein residues {protein_id}")
+fig, ax = plt.subplots(figsize=HEATMAP_FIGSIZE)
+img = ax.imshow(attn_d, aspect="auto", interpolation="nearest")
+cb = fig.colorbar(img, ax=ax, pad=0.01, fraction=0.03, shrink=0.9)
+cb.ax.tick_params(labelsize=TICK_FONTSIZE)
+cb.set_label("Attention weight")
+ax.set_xlabel("Protein residues")
+ax.set_ylabel("Drug atoms")
+ax.set_title(f"{drug_id} Drug queries → protein residues {protein_id}", pad=TITLE_PAD)
 
 # y-axis: label each row by atom symbol
 y_positions = np.arange(attn_d.shape[0])
-plt.yticks(y_positions, atom_labels, fontsize=6)
+ax.set_yticks(y_positions)
+ax.set_yticklabels(atom_labels, fontsize=TICK_FONTSIZE)
+ax.tick_params(axis="x", labelsize=TICK_FONTSIZE)
 
 # highlight chosen atom row
-# plt.axhline(highlight_atom_idx, linestyle="--")
+# ax.axhline(highlight_atom_idx, linestyle="--")
 
-plt.tight_layout()
+fig.tight_layout()
+_save_figure(fig, "drug_to_protein_heatmap")
 
 # ---- heatmap: joint residue↔atom score (rows=residues, cols=atoms) ----
-plt.figure(figsize=(8, 6))
-plt.imshow(joint_map, aspect="auto", interpolation="nearest")
-plt.colorbar(label=f"Joint score ({args.joint_mode})")
-plt.xlabel("Drug atoms")
-plt.ylabel("Protein residues")
-plt.title(f"Joint residue↔atom map ({args.joint_mode})  {protein_id} ↔ {drug_id}")
+fig, ax = plt.subplots(figsize=HEATMAP_FIGSIZE)
+img = ax.imshow(joint_map, aspect="auto", interpolation="nearest")
+cb = fig.colorbar(img, ax=ax, pad=0.01, fraction=0.03, shrink=0.9)
+cb.ax.tick_params(labelsize=TICK_FONTSIZE)
+cb.set_label(f"Joint score ({args.joint_mode})")
+ax.set_xlabel("Drug atoms")
+ax.set_ylabel("Protein residues")
+ax.set_title(f"Joint residue↔atom map ({args.joint_mode})  {protein_id} ↔ {drug_id}", pad=TITLE_PAD)
 
 x_positions = np.arange(joint_map.shape[1])
-plt.xticks(x_positions, atom_labels, rotation=90, fontsize=6)
+ax.set_xticks(x_positions)
+ax.set_xticklabels(atom_labels, rotation=0, ha="center", fontsize=TICK_FONTSIZE)
+ax.tick_params(axis="y", labelsize=TICK_FONTSIZE)
 
-plt.tight_layout()
+fig.tight_layout()
+_save_figure(fig, "joint_attention_heatmap")
 
 plt.show()
 
@@ -640,7 +784,6 @@ else:
     w_norm = (w - w_min) / (w_max - w_min)
 
 # Map to colors using a matplotlib colormap (no seaborn)
-import matplotlib
 cmap = matplotlib.cm.get_cmap("viridis")
 
 def rgba_to_hex(rgba):
@@ -660,8 +803,6 @@ view.zoomTo()
 
 # In a Jupyter notebook, view.show() will display.
 # In a plain Python run, write an HTML file you can open in a browser.
-
-from pathlib import Path
 html_path = Path("drug_view.html").resolve()
 html_path.write_text(view._make_html(), encoding="utf-8")
 print(f"Wrote 3D view to: {html_path}")
