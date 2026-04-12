@@ -505,9 +505,9 @@ class Model(nn.Module):
         #         # activation="gelu",
         #     ), num_layers=1)
         self.protein_cnn = DrugCNN(cfg.PROTEIN.EMBEDDING_DIM, hidden_dim=cfg.PROTEIN.EMBEDDING_DIM, num_layers=2, dropout_rate=cfg.SOLVER.DROPOUT)
-        self.drug_sa = DrugSA(cfg.DRUG.EMBEDDING_DIM)
+        # self.drug_sa = DrugSA(cfg.DRUG.EMBEDDING_DIM)
         # self.drug_conv = DrugConv(cfg.DRUG.EMBEDDING_DIM, cfg.DRUG.CONV_DIMS)
-        # self.drug_cnn = DrugCNN(cfg.DRUG.EMBEDDING_DIM, hidden_dim=cfg.DRUG.EMBEDDING_DIM, num_layers=2, dropout_rate=cfg.SOLVER.DROPOUT)
+        self.drug_cnn = DrugCNN(cfg.DRUG.EMBEDDING_DIM, hidden_dim=cfg.DRUG.EMBEDDING_DIM, num_layers=2, dropout_rate=cfg.SOLVER.DROPOUT)
         # self.drug_sa = nn.TransformerEncoder(
         #     nn.TransformerEncoderLayer(
         #         d_model=cfg.DRUG.EMBEDDING_DIM,
@@ -527,14 +527,15 @@ class Model(nn.Module):
         protein_features = self.protein_cnn(protein_emb)
         # protein_features = protein_emb  # (B, L, D)
 
-        # drug_features = self.drug_cnn(drug_emb)
-        drug_features = self.drug_sa(drug_emb, mask=drug_mask)
+        drug_features = self.drug_cnn(drug_emb)
+        # drug_features = self.drug_sa(drug_emb, mask=drug_mask)
         # drug_features = self.drug_sa(drug_emb, src_key_padding_mask=drug_mask)  # (B, L, D)
         # Both (B, L, D)
-        if return_attention:
-            attended_protein_features, attended_drug_features, attentionp, attentiond = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask, return_attention=True)
-        else:
-            attended_protein_features, attended_drug_features = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask, return_attention=False)
+        # if return_attention:
+        #     attended_protein_features, attended_drug_features, attentionp, attentiond = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask, return_attention=True)
+        # else:
+        #     attended_protein_features, attended_drug_features = self.cross_attention(protein_features, drug_features, protein_mask=protein_mask, drug_mask=drug_mask, return_attention=False)
+        attended_protein_features, attended_drug_features = protein_features, drug_features
         fused_features = self.fusion(attended_protein_features, attended_drug_features, protein_mask=protein_mask, drug_mask=drug_mask)
         # at this point, shape of (B, D)
         output = self.mlp(fused_features)

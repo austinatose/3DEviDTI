@@ -92,14 +92,41 @@ class Solver:
         self.optim = optim(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
         # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optim, mode='min', factor=0.5, patience=5)  # FIXME
 
+        self.prot_cache_size = int(getattr(cfg.DATA, "PROT_CACHE_SIZE", 0))
+        self.drug_cache_size = int(getattr(cfg.DATA, "DRUG_CACHE_SIZE", 0))
+        self.num_workers = int(getattr(cfg.DATA, "NUM_WORKERS", 0))
+        self.prefetch_factor = int(getattr(cfg.DATA, "PREFETCH_FACTOR", 2))
+        self.persistent_workers = bool(getattr(cfg.DATA, "PERSISTENT_WORKERS", True))
+        use_pin_memory = bool(getattr(cfg.DATA, "PIN_MEMORY", True))
+        self.pin_memory = use_pin_memory and self.device.type == "cuda"
+        self.non_blocking = bool(getattr(cfg.DATA, "NON_BLOCKING_DEVICE_TRANSFER", True)) and self.device.type == "cuda"
+
         # use pre-split data first, then implement k-fold later
-        self.train_ds = KIBADataset(cfg.DATA.TRAIN_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
-        self.train_dl = DataLoader(self.train_ds, batch_size=cfg.SOLVER.BATCH_SIZE, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=True)
+        self.train_ds = MyDataset(
+            cfg.DATA.TRAIN_CSV_PATH,
+            cfg.DATA.PROTEIN_DIR,
+            cfg.DATA.DRUG_DIR,
+            prot_cache_size=self.prot_cache_size,
+            drug_cache_size=self.drug_cache_size,
+        )
+        self.train_dl = self._build_loader(self.train_ds, shuffle=True, drop_last=True)
         
-        self.test_ds = KIBADataset(cfg.DATA.TEST_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
-        self.test_dl = DataLoader(self.test_ds, batch_size=cfg.SOLVER.BATCH_SIZE, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=False)
-        self.val_ds = KIBADataset(cfg.DATA.VAL_CSV_PATH, cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
-        self.val_dl = DataLoader(self.val_ds, batch_size=cfg.SOLVER.BATCH_SIZE, shuffle=True, num_workers=0, collate_fn=collate_fn, drop_last=False)
+        self.test_ds = MyDataset(
+            cfg.DATA.TEST_CSV_PATH,
+            cfg.DATA.PROTEIN_DIR,
+            cfg.DATA.DRUG_DIR,
+            prot_cache_size=self.prot_cache_size,
+            drug_cache_size=self.drug_cache_size,
+        )
+        self.test_dl = self._build_loader(self.test_ds, shuffle=False, drop_last=False)
+        self.val_ds = MyDataset(
+            cfg.DATA.VAL_CSV_PATH,
+            cfg.DATA.PROTEIN_DIR,
+            cfg.DATA.DRUG_DIR,
+            prot_cache_size=self.prot_cache_size,
+            drug_cache_size=self.drug_cache_size,
+        )
+        self.val_dl = self._build_loader(self.val_ds, shuffle=False, drop_last=False)
 
         self.loss_fn = dirichlet_loss if loss_fn == "dirichlet_loss" else F.cross_entropy
         self.start_date = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
@@ -120,19 +147,40 @@ class Solver:
             f.write("\n")
 
         print(f"Using loss function: {self.loss_fn.__name__}")
+        print(
+            "Data loader config: "
+            f"num_workers={self.num_workers}, pin_memory={self.pin_memory}, "
+            f"persistent_workers={self.persistent_workers and self.num_workers > 0}, "
+            f"prefetch_factor={self.prefetch_factor if self.num_workers > 0 else 'n/a'}, "
+            f"prot_cache_size={self.prot_cache_size}, drug_cache_size={self.drug_cache_size}"
+        )
 
         print("Solver initialized.")
+
+    def _build_loader(self, dataset, shuffle: bool, drop_last: bool):
+        kwargs = {
+            "batch_size": self.batch_size,
+            "shuffle": shuffle,
+            "num_workers": self.num_workers,
+            "collate_fn": collate_fn,
+            "drop_last": drop_last,
+            "pin_memory": self.pin_memory,
+        }
+        if self.num_workers > 0:
+            kwargs["persistent_workers"] = self.persistent_workers
+            kwargs["prefetch_factor"] = self.prefetch_factor
+        return DataLoader(dataset, **kwargs)
 
     def predict(self, data_loader, epoch, optim=None):
         running_loss = 0.0
         # TODO: running accuracy required? batch size being around 32 is too small to detect changes
         results = []
         for i, batch in enumerate(data_loader):
-            labels = batch["label"].to(self.device)  # [batchsize]
-            protein_mask = batch["protein_mask"].to(self.device)  # [batchsize, Lpmax]
-            drug_mask = batch["drug_mask"].to(self.device)  # [batchsize, Ldmax]
-            protein_emb = batch["protein_emb"].to(self.device)  # [batchsize, Lpmax, Dp]
-            drug_emb = batch["drug_emb"].to(self.device)  # [batchsize, Ldmax, Dd]
+            labels = batch["label"].to(self.device, non_blocking=self.non_blocking)  # [batchsize]
+            protein_mask = batch["protein_mask"].to(self.device, non_blocking=self.non_blocking)  # [batchsize, Lpmax]
+            drug_mask = batch["drug_mask"].to(self.device, non_blocking=self.non_blocking)  # [batchsize, Ldmax]
+            protein_emb = batch["protein_emb"].to(self.device, non_blocking=self.non_blocking)  # [batchsize, Lpmax, Dp]
+            drug_emb = batch["drug_emb"].to(self.device, non_blocking=self.non_blocking)  # [batchsize, Ldmax, Dd]
 
             # old_params = []
             # for p in model.parameters():
@@ -207,11 +255,11 @@ class Solver:
         drug_ids = []
 
         for _, batch in enumerate(data_loader):
-            labels = batch["label"].to(self.device)                    # (B,)
-            protein_mask = batch["protein_mask"].to(self.device)       # (B, Lp)
-            drug_mask = batch["drug_mask"].to(self.device)             # (B, Ld)
-            protein_emb = batch["protein_emb"].to(self.device)         # (B, Lp, Dp)
-            drug_emb = batch["drug_emb"].to(self.device)               # (B, Ld, Dd)
+            labels = batch["label"].to(self.device, non_blocking=self.non_blocking)                    # (B,)
+            protein_mask = batch["protein_mask"].to(self.device, non_blocking=self.non_blocking)       # (B, Lp)
+            drug_mask = batch["drug_mask"].to(self.device, non_blocking=self.non_blocking)             # (B, Ld)
+            protein_emb = batch["protein_emb"].to(self.device, non_blocking=self.non_blocking)         # (B, Lp, Dp)
+            drug_emb = batch["drug_emb"].to(self.device, non_blocking=self.non_blocking)               # (B, Ld, Dd)
 
             labels_np = labels.detach().cpu().numpy().astype(int)       # (B,)
 
