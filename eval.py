@@ -147,13 +147,13 @@ avg_sample_ms = (elapsed_time / num_samples) * 1000 if num_samples > 0 else floa
 
 print('Test accuracy: %.4f%% MCC: %.4f AUC: %.4f AUPRC: %.4f' % (val_acc, val_mcc, val_auc, val_auprc))
 print('F1: %.4f Precision: %.4f Recall: %.4f' % (val_f1, val_precision, val_recall))
-print('Inference timing: total %.4fs | %.2f samples/s | %.3f ms/batch | %.3f ms/sample' % (
+print('Inference timing: total %.4fs | %.2f samples/s | %.3f ms/batch | %.5f ms/sample' % (
 	elapsed_time,
 	samples_per_sec,
 	avg_batch_ms,
 	avg_sample_ms,
 ))
-print('Forward-only timing: total %.4fs | %.2f samples/s | %.3f ms/batch | %.3f ms/sample' % (
+print('Forward-only timing: total %.4fs | %.2f samples/s | %.3f ms/batch | %.5f ms/sample' % (
 	forward_seconds,
 	forward_sps,
 	forward_batch_ms,

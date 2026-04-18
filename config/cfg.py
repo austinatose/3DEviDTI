@@ -19,17 +19,20 @@ _C.MLP.DROPOUT_RATE = 0.2
 
 _C.SOLVER = CN()
 _C.SOLVER.BATCH_SIZE = 32
-_C.SOLVER.EPOCHS = 67
-_C.SOLVER.LR = 1e-4
+_C.SOLVER.EPOCHS = 60
+_C.SOLVER.LR = 2e-5
 _C.SOLVER.WEIGHT_DECAY = 0
 _C.SOLVER.DROPOUT = 0.2
 _C.SOLVER.LOSS_FN = "cross_entropy"
 # _C.SOLVER.LOSS_FN = "dirichlet_loss"
 
 _C.DATA = CN()
-_C.DATA.TEST_CSV_PATH = "lists/db_new/db_val.csv"
-_C.DATA.TRAIN_CSV_PATH = "lists/db_new/db_train.csv"
-_C.DATA.VAL_CSV_PATH = "lists/db_new/db_test.csv"
+# _C.DATA.TEST_CSV_PATH = "lists/db_new/db_val.csv"
+# _C.DATA.TRAIN_CSV_PATH = "lists/db_new/db_train.csv"
+# _C.DATA.VAL_CSV_PATH = "lists/db_new/db_test.csv"
+_C.DATA.TEST_CSV_PATH = "/mnt/data/austin/MocFormer/DrugBank_uni_esm2_3B_pos_len_d200_p700_sim_both_neg_test.csv"
+_C.DATA.TRAIN_CSV_PATH = "/mnt/data/austin/MocFormer/DrugBank_uni_esm2_3B_pos_len_d200_p700_sim_both_neg_train.csv"
+_C.DATA.VAL_CSV_PATH = "/mnt/data/austin/MocFormer/DrugBank_uni_esm2_3B_pos_len_d200_p700_sim_both_neg_val.csv"
 _C.DATA.PROTEIN_DIR = "embeddings"
 _C.DATA.DRUG_DIR = "drug/embeddings_atomic/"
 _C.DATA.PROT_CACHE_SIZE = 4096

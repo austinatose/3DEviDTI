@@ -36,9 +36,6 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from rdkit import Chem, DataStructs
-from rdkit.Chem import AllChem
-from rdkit.ML.Cluster import Butina
 from sklearn.cluster import AgglomerativeClustering
 
 
@@ -48,6 +45,15 @@ from sklearn.cluster import AgglomerativeClustering
 
 def ecfp4_fingerprints(smiles_list: list[str], radius: int = 2, n_bits: int = 2048):
     """Return a list of RDKit Morgan fingerprint objects (bit vectors)."""
+    try:
+        from rdkit import Chem
+        from rdkit.Chem import AllChem
+    except Exception as e:
+        raise ImportError(
+            "RDKit is required for drug similarity clustering. "
+            "Install rdkit or use --mode protein."
+        ) from e
+
     fps = []
     for smi in smiles_list:
         mol = Chem.MolFromSmiles(smi)
@@ -64,6 +70,14 @@ def tanimoto_distance_matrix(fps: list) -> list[float]:
     Returns a flat list of pairwise distances in the order required by
     ``Butina.ClusterData``: d(0,1), d(0,2), …, d(0,n-1), d(1,2), …
     """
+    try:
+        from rdkit import DataStructs
+    except Exception as e:
+        raise ImportError(
+            "RDKit is required for drug similarity clustering. "
+            "Install rdkit or use --mode protein."
+        ) from e
+
     n = len(fps)
     dists = []
     for i in range(1, n):
@@ -88,6 +102,14 @@ def cluster_drugs(smiles_list: list[str], threshold: float = 0.4) -> np.ndarray:
     labels : np.ndarray of shape (n_drugs,)
         Integer cluster label for each drug.
     """
+    try:
+        from rdkit.ML.Cluster import Butina
+    except Exception as e:
+        raise ImportError(
+            "RDKit is required for drug similarity clustering. "
+            "Install rdkit or use --mode protein."
+        ) from e
+
     fps = ecfp4_fingerprints(smiles_list)
 
     # Handle molecules that could not be parsed — give each its own cluster
