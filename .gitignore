@@ -7,10 +7,11 @@
 /drug/embeddings_atomic/
 /drug/embeddings_atomic_KIBA/
 /saved
-/.vscode
+.vscode/
 /other/uniprot_fasta
 /lists/mf_test.csv
 /lists/mf_train.csv
 /lists/mf_val.csv
 /interpretation/mappings
 /best_models
+.claude/
