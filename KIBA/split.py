@@ -1,60 +1,99 @@
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
 import pandas as pd
-from sklearn.model_selection import train_test_split
 
-def print_class_balance(df, name="dataset"):
-    """
-    df: pandas DataFrame with an 'interaction' column (0/1)
-    name: label to print (e.g. 'full', 'train', 'val', 'test')
-    """
-    counts = df["interaction"].value_counts().sort_index()
+
+# Ensure project root is importable when running from this subfolder.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from processing.similarity_split import similarity_split
+
+
+def print_label_balance(df: pd.DataFrame, label_col: str, name: str) -> None:
+    counts = df[label_col].value_counts().sort_index()
     total = len(df)
-
     pos = int(counts.get(1, 0))
     neg = int(counts.get(0, 0))
-
-    print(f"\n=== Class balance for {name} ===")
+    print(f"\n=== Label balance for {name} ===")
     print(f"Total samples: {total}")
     print(f"Negatives (0): {neg} ({neg / total:.3f})")
     print(f"Positives (1): {pos} ({pos / total:.3f})")
 
-# Path to your full pairs file
-pairs_path = "lists/KIBA/KIBA_pairs.csv"   # adjust if needed
 
-# Load
-df = pd.read_csv(pairs_path)
+def build_output_path(out_dir: Path, split_name: str, suffix: str) -> Path:
+    return out_dir / f"KIBA_pairs_{split_name}{suffix}.csv"
 
-# 80% train+val, 20% test (you can change these)
-test_size = 0.1
-val_size = 0.1  # fraction of the *total* dataset
 
-# 1) Split off test set
-train_val_df, test_df = train_test_split(
-    df,
-    test_size=test_size,
-    random_state=42,
-    stratify=df["interaction"]  # keep class balance
-)
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Create KIBA train/val/test files with similarity-aware splitting.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("--pairs_csv", default="lists/KIBA/KIBA_pairs.csv")
+    parser.add_argument("--out_dir", default="lists/KIBA")
+    parser.add_argument("--output_suffix", default="_sim_protein")
 
-# 2) Split train vs val from the remaining
-# val_size relative to train_val_df
-val_relative_size = val_size / (1 - test_size)
+    parser.add_argument("--mode", choices=["drug", "protein", "both"], default="protein")
+    parser.add_argument("--drug_threshold", type=float, default=0.4)
+    parser.add_argument("--protein_threshold", type=float, default=0.5)
+    parser.add_argument("--protein_kmer_k", type=int, default=3)
 
-train_df, val_df = train_test_split(
-    train_val_df,
-    test_size=val_relative_size,
-    random_state=42,
-    stratify=train_val_df["interaction"]
-)
+    parser.add_argument("--train_ratio", type=float, default=0.8)
+    parser.add_argument("--val_ratio", type=float, default=0.1)
+    parser.add_argument("--test_ratio", type=float, default=0.1)
+    parser.add_argument("--seed", type=int, default=42)
 
-print(f"Total: {len(df)}")
-print(f"Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}")
+    args = parser.parse_args()
 
-print_class_balance(df, "full")
-print_class_balance(train_df, "train")
-print_class_balance(val_df, "val")
-print_class_balance(test_df, "test")
+    df = pd.read_csv(args.pairs_csv)
 
-# Save to CSVs
-train_df.to_csv("lists/KIBA/KIBA_pairs_train.csv", index=False)
-val_df.to_csv("lists/KIBA/KIBA_pairs_val.csv", index=False)
-test_df.to_csv("lists/KIBA/KIBA_pairs_test.csv", index=False)
+    train_df, val_df, test_df, stats = similarity_split(
+        df,
+        mode=args.mode,
+        drug_col="drug_id",
+        smiles_col="smiles",
+        protein_col="uniprot_id",
+        sequence_col="Target sequence",
+        label_col="interaction",
+        drug_threshold=args.drug_threshold,
+        protein_threshold=args.protein_threshold,
+        protein_kmer_k=args.protein_kmer_k,
+        target_ratios=(args.train_ratio, args.val_ratio, args.test_ratio),
+        seed=args.seed,
+    )
+
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    train_path = build_output_path(out_dir, "train", args.output_suffix)
+    val_path = build_output_path(out_dir, "val", args.output_suffix)
+    test_path = build_output_path(out_dir, "test", args.output_suffix)
+
+    train_df.to_csv(train_path, index=False)
+    val_df.to_csv(val_path, index=False)
+    test_df.to_csv(test_path, index=False)
+
+    print(f"\nSaved: {train_path}")
+    print(f"Saved: {val_path}")
+    print(f"Saved: {test_path}")
+
+    print(f"\nTotal rows: {len(df)}")
+    print(f"Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}")
+    print_label_balance(df, "interaction", "full")
+    print_label_balance(train_df, "interaction", "train")
+    print_label_balance(val_df, "interaction", "val")
+    print_label_balance(test_df, "interaction", "test")
+
+    print("\nSplit stats:")
+    for key in sorted(stats):
+        print(f"  {key}: {stats[key]}")
+
+
+if __name__ == "__main__":
+    main()

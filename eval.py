@@ -24,7 +24,7 @@ from solver import Solver
 # CKPT_PATH = "saved/cnn321_epoch_58.pt"
 # model_4257565100199224673_epoch_36.pt
 
-CKPT_PATH = "best_models/model_-7649301121676988024_epoch_56.pt"
+CKPT_PATH = "best_models/model_7607792504713019690_epoch_96.pt"
 
 # Data loading performance knobs for on-demand .pt reads.
 PROT_CACHE_SIZE = 4096
