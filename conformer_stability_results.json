@@ -25,10 +25,10 @@
     "baseline_subsample_auroc": 0.8537373491037679
   },
   "timing": {
-    "wall_time_s": 36.97,
-    "conformer_gen_s": 30.76,
-    "unimol_embed_s": 9.8,
-    "inference_s": 6.1,
+    "wall_time_s": 35.67,
+    "conformer_gen_s": 30.01,
+    "unimol_embed_s": 8.56,
+    "inference_s": 5.49,
     "conformer_failures": 5,
     "drugs_skipped": 1,
     "protein_misses": 0

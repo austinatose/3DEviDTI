@@ -43,6 +43,11 @@ def main() -> None:
     parser.add_argument("--drug_threshold", type=float, default=0.4)
     parser.add_argument("--protein_threshold", type=float, default=0.5)
     parser.add_argument("--protein_kmer_k", type=int, default=3)
+    parser.add_argument("--protein_cluster_method", choices=["jaccard", "mmseqs2"], default="jaccard")
+    parser.add_argument("--split_assignment", choices=["greedy", "distance_max"], default="greedy")
+    parser.add_argument("--cluster_distance_agg", choices=["max", "mean"], default="max")
+    parser.add_argument("--distance_refine_iters", type=int, default=0)
+    parser.add_argument("--distance_size_tolerance", type=float, default=0.02)
 
     parser.add_argument("--train_ratio", type=float, default=0.8)
     parser.add_argument("--val_ratio", type=float, default=0.1)
@@ -64,6 +69,11 @@ def main() -> None:
         drug_threshold=args.drug_threshold,
         protein_threshold=args.protein_threshold,
         protein_kmer_k=args.protein_kmer_k,
+        protein_cluster_method=args.protein_cluster_method,
+        split_assignment=args.split_assignment,
+        cluster_distance_agg=args.cluster_distance_agg,
+        distance_refine_iters=args.distance_refine_iters,
+        distance_size_tolerance=args.distance_size_tolerance,
         target_ratios=(args.train_ratio, args.val_ratio, args.test_ratio),
         seed=args.seed,
     )

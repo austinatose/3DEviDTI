@@ -25,6 +25,7 @@ from solver import Solver
 # model_4257565100199224673_epoch_36.pt
 
 CKPT_PATH = "best_models/model_7607792504713019690_epoch_96.pt"
+# CKPT_PATH = "saved/model_7027097688980953402_epoch_97.pt"
 
 # Data loading performance knobs for on-demand .pt reads.
 PROT_CACHE_SIZE = 4096
@@ -88,7 +89,7 @@ solver = Solver(model, cfg, device=DEVICE, optim=torch.optim.Adam, loss_fn=cfg.S
 
 # test_ds = KIBADataset('lists/KIBA/KIBA_pairs_test.csv', cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
 test_ds = MyDataset(
-	'lists/db_new/db_test.csv',
+	'lists/db_new/db_val.csv',
 	cfg.DATA.PROTEIN_DIR,
 	cfg.DATA.DRUG_DIR,
 	prot_cache_size=PROT_CACHE_SIZE,

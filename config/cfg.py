@@ -27,9 +27,9 @@ _C.SOLVER.LOSS_FN = "cross_entropy"
 # _C.SOLVER.LOSS_FN = "dirichlet_loss"
 
 _C.DATA = CN()
-_C.DATA.TEST_CSV_PATH = "lists/db_new/db_val.csv"
+_C.DATA.TEST_CSV_PATH = "lists/db_new/db_test.csv"
 _C.DATA.TRAIN_CSV_PATH = "lists/db_new/db_train.csv"
-_C.DATA.VAL_CSV_PATH = "lists/db_new/db_test.csv"
+_C.DATA.VAL_CSV_PATH = "lists/db_new/db_val.csv"
 # _C.DATA.TEST_CSV_PATH = "/mnt/data/austin/MocFormer/DrugBank_uni_esm2_3B_pos_len_d200_p700_sim_both_neg_test.csv"
 # _C.DATA.TRAIN_CSV_PATH = "/mnt/data/austin/MocFormer/DrugBank_uni_esm2_3B_pos_len_d200_p700_sim_both_neg_train.csv"
 # _C.DATA.VAL_CSV_PATH = "/mnt/data/austin/MocFormer/DrugBank_uni_esm2_3B_pos_len_d200_p700_sim_both_neg_val.csv"
