@@ -9,7 +9,7 @@ from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 import matplotlib.pyplot as plt
 
 from config.cfg import get_cfg_defaults
-from dataset import MyDataset, collate_fn, KIBADataset
+from dataset import create_dataset, collate_fn
 
 from model import Model
 
@@ -17,10 +17,12 @@ import torch
 import torch.nn.functional as F         # scalar
 
 class Solver:
-    def __init__(self, model, cfg, device, optim, loss_fn, eval):
+    def __init__(self, model, cfg, device, optim, loss_fn, eval=False):
         self.cfg = cfg
         self.device = device
         self.model = model.to(self.device)
+        self.is_eval_run = bool(eval)
+        self.enable_logging = not self.is_eval_run
         self.batch_size = cfg.SOLVER.BATCH_SIZE
         self.epochs = cfg.SOLVER.EPOCHS
         self.learning_rate = cfg.SOLVER.LR
@@ -38,29 +40,33 @@ class Solver:
         self.non_blocking = bool(getattr(cfg.DATA, "NON_BLOCKING_DEVICE_TRANSFER", True)) and self.device.type == "cuda"
 
         # use pre-split data first, then implement k-fold later
-        self.train_ds = MyDataset(
+        dataset_hint = str(getattr(cfg.DATA, "DATASET_HINT", "auto"))
+        self.train_ds = create_dataset(
             cfg.DATA.TRAIN_CSV_PATH,
             cfg.DATA.PROTEIN_DIR,
             cfg.DATA.DRUG_DIR,
             prot_cache_size=self.prot_cache_size,
             drug_cache_size=self.drug_cache_size,
+            dataset_hint=dataset_hint,
         )
         self.train_dl = self._build_loader(self.train_ds, shuffle=True, drop_last=True)
         
-        self.test_ds = MyDataset(
+        self.test_ds = create_dataset(
             cfg.DATA.TEST_CSV_PATH,
             cfg.DATA.PROTEIN_DIR,
             cfg.DATA.DRUG_DIR,
             prot_cache_size=self.prot_cache_size,
             drug_cache_size=self.drug_cache_size,
+            dataset_hint=dataset_hint,
         )
         self.test_dl = self._build_loader(self.test_ds, shuffle=False, drop_last=False)
-        self.val_ds = MyDataset(
+        self.val_ds = create_dataset(
             cfg.DATA.VAL_CSV_PATH,
             cfg.DATA.PROTEIN_DIR,
             cfg.DATA.DRUG_DIR,
             prot_cache_size=self.prot_cache_size,
             drug_cache_size=self.drug_cache_size,
+            dataset_hint=dataset_hint,
         )
         self.val_dl = self._build_loader(self.val_ds, shuffle=False, drop_last=False)
 
@@ -71,16 +77,18 @@ class Solver:
 
         # hash together cfg and model and date to identify this training run
         self.id = hash((str(cfg), str(model), self.start_date))
-        print(f"Training run ID: {self.id}")
-
-        with open(os.path.join("logs", f"training_log_{self.start_date}.csv"), "w") as f:
-            f.write(self.start_date + "\n")
-            f.write(str(self.id) + "\n\n")
-            f.write(str(cfg))
-            # write model components
-            f.write("\n\nModel architecture:\n")
-            f.write(str(model))
-            f.write("\n")
+        if self.enable_logging:
+            print(f"Training run ID: {self.id}")
+            with open(os.path.join("logs", f"training_log_{self.start_date}.csv"), "w") as f:
+                f.write(self.start_date + "\n")
+                f.write(str(self.id) + "\n\n")
+                f.write(str(cfg))
+                # write model components
+                f.write("\n\nModel architecture:\n")
+                f.write(str(model))
+                f.write("\n")
+        else:
+            print("Solver running in eval mode: logging disabled.")
 
         print(f"Using loss function: {self.loss_fn.__name__}")
         print(

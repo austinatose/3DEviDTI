@@ -14,7 +14,7 @@ from sklearn.metrics import (
 	roc_auc_score,
 )
 from torch.utils.data import DataLoader
-from dataset import MyDataset, collate_fn, KIBADataset
+from dataset import MyDataset, collate_fn
 from model import Model
 from config.cfg import get_cfg_defaults
 from solver import Solver
@@ -24,7 +24,7 @@ from solver import Solver
 # CKPT_PATH = "saved/cnn321_epoch_58.pt"
 # model_4257565100199224673_epoch_36.pt
 
-CKPT_PATH = "best_models/model_7607792504713019690_epoch_96.pt"
+CKPT_PATH = "best_models/model_-8473496469574036713_epoch_77.pt"
 # CKPT_PATH = "saved/model_7027097688980953402_epoch_97.pt"
 
 # Data loading performance knobs for on-demand .pt reads.
@@ -85,11 +85,10 @@ model = Model(cfg=cfg)
 model.load_state_dict(ckpt['model_state_dict'])
 model.to(DEVICE)
 
-solver = Solver(model, cfg, device=DEVICE, optim=torch.optim.Adam, loss_fn=cfg.SOLVER.LOSS_FN, eval=None)
+solver = Solver(model, cfg, device=DEVICE, optim=torch.optim.Adam, loss_fn=cfg.SOLVER.LOSS_FN, eval=True)
 
-# test_ds = KIBADataset('lists/KIBA/KIBA_pairs_test.csv', cfg.DATA.PROTEIN_DIR, cfg.DATA.DRUG_DIR)
 test_ds = MyDataset(
-	'lists/db_new/db_val.csv',
+	'lists/KIBA/KIBA_pairs_test_stratified.csv',
 	cfg.DATA.PROTEIN_DIR,
 	cfg.DATA.DRUG_DIR,
 	prot_cache_size=PROT_CACHE_SIZE,

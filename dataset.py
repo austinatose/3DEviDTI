@@ -9,6 +9,39 @@ from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
 
 
+def _id_prefix_ratio(values, prefix: str, sample_size: int = 1024) -> float:
+    vals = list(values)
+    if not vals:
+        return 0.0
+    n = min(len(vals), sample_size)
+    pref = prefix.upper()
+    hits = sum(1 for v in vals[:n] if str(v).upper().startswith(pref))
+    return hits / float(n)
+
+
+def infer_dataset_kind(csv_path, drug_ids, dataset_hint: str = "auto") -> str:
+    """Infer whether a split looks like KIBA (ChemBL IDs) or DrugBank.
+
+    Returns one of: {"kiba", "drugbank"}
+    """
+    hint = str(dataset_hint).strip().lower()
+    if hint in {"kiba", "chembl"}:
+        return "kiba"
+    if hint in {"drugbank", "db"}:
+        return "drugbank"
+
+    path_lower = str(csv_path).lower()
+    if "kiba" in path_lower:
+        return "kiba"
+
+    chembl_ratio = _id_prefix_ratio(drug_ids, "CHEMBL")
+    drugbank_ratio = _id_prefix_ratio(drug_ids, "DB")
+
+    if chembl_ratio >= 0.60 and chembl_ratio > drugbank_ratio:
+        return "kiba"
+    return "drugbank"
+
+
 def collate_fn(batch):
     # pull fields
     prot_list = [b["protein_emb"] for b in batch]   # each: (Lp, d)
@@ -79,7 +112,10 @@ class MyDataset(Dataset):
     def __init__(self, csv_path, protein_dir, drug_dir, *,
                  prot_cache_size: int = 0,
                  drug_cache_size: int = 0,
-                 use_pandas: bool = True):
+                 use_pandas: bool = True,
+                 dataset_hint: str = "auto",
+                 allow_unimol_suffix: bool | None = None,
+                 trim_terminal_token: bool | None = None):
         """
         RAM-efficient dataset that lazily loads embeddings on demand.
 
@@ -90,6 +126,9 @@ class MyDataset(Dataset):
             prot_cache_size: LRU size for protein tensors (set small to keep RAM low; 0 disables caching)
             drug_cache_size: LRU size for drug tensors (set small to keep RAM low; 0 disables caching)
             use_pandas: if True, uses pandas to parse; else falls back to a lightweight CSV reader
+            dataset_hint: one of {"auto", "kiba", "drugbank"}; auto infers from IDs/path
+            allow_unimol_suffix: if None, inferred from dataset kind
+            trim_terminal_token: if None, inferred from dataset kind
         """
         self.protein_dir = protein_dir
         self.drug_dir = drug_dir
@@ -118,8 +157,16 @@ class MyDataset(Dataset):
                     self.drug_ids.append(str(row["drug_id"]))
                     self.labels.append(int(row["interaction"]))
 
+        self.dataset_kind = infer_dataset_kind(csv_path, self.drug_ids, dataset_hint=dataset_hint)
+        self.allow_unimol_suffix = (self.dataset_kind != "kiba") if allow_unimol_suffix is None else bool(allow_unimol_suffix)
+        self.trim_terminal_token = (self.dataset_kind != "kiba") if trim_terminal_token is None else bool(trim_terminal_token)
+
         self.protein_paths = build_protein_path_index(self.protein_dir, self.uniprot_ids)
-        self.drug_paths = build_drug_path_index(self.drug_dir, self.drug_ids, allow_unimol_suffix=True)
+        self.drug_paths = build_drug_path_index(
+            self.drug_dir,
+            self.drug_ids,
+            allow_unimol_suffix=self.allow_unimol_suffix,
+        )
 
         # Configure tiny LRU caches (or disable if size == 0)
         if prot_cache_size > 0:
@@ -141,9 +188,10 @@ class MyDataset(Dataset):
         label = int(self.labels[idx])
 
         protein_emb = self._get_prot(uniprot_id)  # (L_p, d)
-        protein_emb = protein_emb[:-1,:] if len(protein_emb) > 1 else protein_emb  # remove SEP
-        drug_emb = self._get_drug(drug_id)    # (L_d, d)
-        drug_emb = drug_emb[:-1,:] if len(drug_emb) > 1 else drug_emb  # remove SEP
+        drug_emb = self._get_drug(drug_id)  # (L_d, d)
+        if self.trim_terminal_token:
+            protein_emb = protein_emb[:-1, :] if len(protein_emb) > 1 else protein_emb
+            drug_emb = drug_emb[:-1, :] if len(drug_emb) > 1 else drug_emb
 
         return {
             "protein_emb": protein_emb,
@@ -176,11 +224,19 @@ class MyDataset(Dataset):
         key = str(drug_id)
         path = self.drug_paths.get(key)
         if path is None:
-            path = os.path.join(self.drug_dir, f"{key}_unimol.pt")
-            if not os.path.exists(path):
-                path = os.path.join(self.drug_dir, f"{key}.pt")
-                if not os.path.exists(path):
-                    raise FileNotFoundError(f"Drug embedding not found for drug_id='{drug_id}' in {self.drug_dir}")
+            candidates = [f"{key}.pt"]
+            if self.allow_unimol_suffix:
+                candidates.insert(0, f"{key}_unimol.pt")
+
+            path = None
+            for fname in candidates:
+                candidate_path = os.path.join(self.drug_dir, fname)
+                if os.path.exists(candidate_path):
+                    path = candidate_path
+                    break
+
+            if path is None:
+                raise FileNotFoundError(f"Drug embedding not found for drug_id='{drug_id}' in {self.drug_dir}")
             self.drug_paths[key] = path
         d = torch.load(path, map_location="cpu", weights_only=False)
         arr = np.asarray(d["atomic_reprs"], dtype=np.float32).reshape(-1, 512)
@@ -188,6 +244,11 @@ class MyDataset(Dataset):
         del d
         emb = torch.from_numpy(arr)
         return emb
+
+
+def create_dataset(csv_path, protein_dir, drug_dir, **kwargs):
+    """Factory for default dataset creation with auto dataset-kind detection."""
+    return MyDataset(csv_path, protein_dir, drug_dir, **kwargs)
 
 def collate_std(batch):
         # pull fields
@@ -218,218 +279,6 @@ def collate_std(batch):
         "protein_mask": prot_mask,
         "drug_mask": drug_mask,
     }, labels)
-
-class stdDataset(Dataset):
-    def __init__(self, csv_path, protein_dir, drug_dir, *,
-                 prot_cache_size: int = 0,
-                 drug_cache_size: int = 0,
-                 use_pandas: bool = True):
-        """
-        RAM-efficient dataset that lazily loads embeddings on demand.
-
-        Args:
-            csv_path: path to CSV with columns [uniprot_id, drug_id, interaction]
-            protein_dir: root folder containing per-protein .pt embeddings under {uniprot_id}/*.pt
-            drug_dir: folder containing drug embeddings saved as {drug_id}_unimol.pt
-            prot_cache_size: LRU size for protein tensors (set small to keep RAM low; 0 disables caching)
-            drug_cache_size: LRU size for drug tensors (set small to keep RAM low; 0 disables caching)
-            use_pandas: if True, uses pandas to parse; else falls back to a lightweight CSV reader
-        """
-        self.protein_dir = protein_dir
-        self.drug_dir = drug_dir
-
-        # Parse CSV minimally and discard the DataFrame to free memory.
-        if use_pandas:
-            df = pd.read_csv(
-                csv_path,
-                usecols=["uniprot_id", "drug_id", "interaction"],
-                dtype={"uniprot_id": str, "drug_id": str, "interaction": "int8"},
-                engine="c",
-                memory_map=True,
-            )
-            self.uniprot_ids = df["uniprot_id"].tolist()
-            self.drug_ids = df["drug_id"].tolist()
-            self.labels = df["interaction"].astype("int8").tolist()
-            del df
-        else:
-            # Lightweight CSV parsing without pandas
-            import csv
-            self.uniprot_ids, self.drug_ids, self.labels = [], [], []
-            with open(csv_path, "r", newline="") as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    self.uniprot_ids.append(str(row["uniprot_id"]))
-                    self.drug_ids.append(str(row["drug_id"]))
-                    self.labels.append(int(row["interaction"]))
-
-        self.protein_paths = build_protein_path_index(self.protein_dir, self.uniprot_ids)
-        self.drug_paths = build_drug_path_index(self.drug_dir, self.drug_ids, allow_unimol_suffix=True)
-
-        # Configure tiny LRU caches (or disable if size == 0)
-        if prot_cache_size > 0:
-            self._get_prot = lru_cache(maxsize=prot_cache_size)(self._load_prot)
-        else:
-            self._get_prot = self._load_prot
-
-        if drug_cache_size > 0:
-            self._get_drug = lru_cache(maxsize=drug_cache_size)(self._load_drug)
-        else:
-            self._get_drug = self._load_drug
-
-    def __len__(self):
-        return len(self.uniprot_ids)
-
-    def __getitem__(self, idx):
-        uniprot_id = self.uniprot_ids[idx]
-        drug_id = self.drug_ids[idx]
-        label = int(self.labels[idx])
-
-        protein_emb = self._get_prot(uniprot_id)  # (L_p, d)
-        drug_emb = self._get_drug(drug_id)    # (L_d, d)
-
-        return ({
-            "protein_emb": protein_emb,
-            "drug_emb": drug_emb,
-            "drug_mask": None,
-            "protein_mask": None,
-        }, label)
-
-    def _load_prot(self, uniprot_id: str):
-        key = str(uniprot_id)
-        path = self.protein_paths.get(key)
-        if path is None:
-            files = find_pt_files(self.protein_dir, key)
-            if not files:
-                raise FileNotFoundError(
-                    f"No .pt files found for uniprot_id='{uniprot_id}' in {self.protein_dir}"
-                )
-            path = files[-1]
-            self.protein_paths[key] = path
-        # If the file stores a plain tensor, weights_only=True avoids loading extraneous pickled objects
-        emb = torch.load(path, map_location="cpu", weights_only=True)
-        # Ensure float32 tensor and contiguous memory layout
-        if not isinstance(emb, torch.Tensor):
-            emb = torch.as_tensor(emb)
-        emb = emb.to(dtype=torch.float32, copy=False).contiguous()
-        return emb
-
-    def _load_drug(self, drug_id: str):
-        key = str(drug_id)
-        path = self.drug_paths.get(key)
-        if path is None:
-            path = os.path.join(self.drug_dir, f"{key}_unimol.pt")
-            if not os.path.exists(path):
-                path = os.path.join(self.drug_dir, f"{key}.pt")
-                if not os.path.exists(path):
-                    raise FileNotFoundError(f"Drug embedding not found for drug_id='{drug_id}' in {self.drug_dir}")
-            self.drug_paths[key] = path
-        d = torch.load(path, map_location="cpu", weights_only=False)
-        arr = np.asarray(d["atomic_reprs"], dtype=np.float32).reshape(-1, 512)
-        # Drop the dict promptly to free RAM; keep only the tensor view
-        del d
-        emb = torch.from_numpy(arr)
-        return emb
-
-class KIBADataset(Dataset):
-    def __init__(self, csv_path, protein_dir, drug_dir, *,
-                 prot_cache_size: int = 0,
-                 drug_cache_size: int = 0,
-                 use_pandas: bool = True):
-
-        self.protein_dir = protein_dir
-        self.drug_dir = drug_dir
-
-        # Parse CSV minimally and discard the DataFrame to free memory.
-        if use_pandas:
-            df = pd.read_csv(
-                csv_path,
-                usecols=["uniprot_id", "drug_id", "interaction"],
-                dtype={"uniprot_id": str, "drug_id": str, "interaction": "int8"},
-                engine="c",
-                memory_map=True,
-            )
-            self.uniprot_ids = df["uniprot_id"].tolist()
-            self.drug_ids = df["drug_id"].tolist()
-            self.labels = df["interaction"].astype("int8").tolist()
-            del df
-        else:
-            # Lightweight CSV parsing without pandas
-            import csv
-            self.uniprot_ids, self.drug_ids, self.labels = [], [], []
-            with open(csv_path, "r", newline="") as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    self.uniprot_ids.append(str(row["uniprot_id"]))
-                    self.drug_ids.append(str(row["drug_id"]))
-                    self.labels.append(int(row["interaction"]))
-
-        self.protein_paths = build_protein_path_index(self.protein_dir, self.uniprot_ids)
-        self.drug_paths = build_drug_path_index(self.drug_dir, self.drug_ids, allow_unimol_suffix=False)
-
-        # Configure tiny LRU caches (or disable if size == 0)
-        if prot_cache_size > 0:
-            self._get_prot = lru_cache(maxsize=prot_cache_size)(self._load_prot)
-        else:
-            self._get_prot = self._load_prot
-
-        if drug_cache_size > 0:
-            self._get_drug = lru_cache(maxsize=drug_cache_size)(self._load_drug)
-        else:
-            self._get_drug = self._load_drug
-
-    def __len__(self):
-        return len(self.uniprot_ids)
-
-    def __getitem__(self, idx):
-        uniprot_id = self.uniprot_ids[idx]
-        drug_id = self.drug_ids[idx]
-        label = int(self.labels[idx])
-
-        protein_emb = self._get_prot(uniprot_id)  # (L_p, d)
-        drug_emb = self._get_drug(drug_id)    # (L_d, d)
-
-        return {
-            "protein_emb": protein_emb,
-            "drug_emb": drug_emb,
-            "label": label,
-            "uniprot_id": uniprot_id,
-            "drug_id": drug_id,
-        }
-
-    def _load_prot(self, uniprot_id: str):
-        key = str(uniprot_id)
-        path = self.protein_paths.get(key)
-        if path is None:
-            files = find_pt_files(self.protein_dir, key)
-            if not files:
-                raise FileNotFoundError(
-                    f"No .pt files found for uniprot_id='{uniprot_id}' in {self.protein_dir}"
-                )
-            path = files[-1]
-            self.protein_paths[key] = path
-        # If the file stores a plain tensor, weights_only=True avoids loading extraneous pickled objects
-        emb = torch.load(path, map_location="cpu", weights_only=True)
-        # Ensure float32 tensor and contiguous memory layout
-        if not isinstance(emb, torch.Tensor):
-            emb = torch.as_tensor(emb)
-        emb = emb.to(dtype=torch.float32, copy=False).contiguous()
-        return emb
-
-    def _load_drug(self, drug_id: str):
-        key = str(drug_id)
-        path = self.drug_paths.get(key)
-        if path is None:
-            path = os.path.join(self.drug_dir, f"{key}.pt")
-            if not os.path.exists(path):
-                raise FileNotFoundError(f"Drug embedding not found for drug_id='{drug_id}' in {self.drug_dir}")
-            self.drug_paths[key] = path
-        d = torch.load(path, map_location="cpu", weights_only=False)
-        arr = np.asarray(d["atomic_reprs"], dtype=np.float32).reshape(-1, 512)
-        # Drop the dict promptly to free RAM; keep only the tensor view
-        del d
-        emb = torch.from_numpy(arr)
-        return emb
-
 
 class ESM2Dataset(Dataset):
     """Dataset for CSVs where both embeddings are already stored as strings.

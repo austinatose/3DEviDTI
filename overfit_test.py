@@ -11,4 +11,4 @@ cfg = get_cfg_defaults()
 model = Model(cfg)
 device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-solver = Solver(model, cfg, device=device, optim=torch.optim.Adam, loss_fn=dirichlet_loss, eval=None)
+solver = Solver(model, cfg, device=device, optim=torch.optim.Adam, loss_fn=dirichlet_loss, eval=True)

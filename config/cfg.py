@@ -20,23 +20,26 @@ _C.MLP.DROPOUT_RATE = 0.2
 _C.SOLVER = CN()
 _C.SOLVER.BATCH_SIZE = 32
 _C.SOLVER.EPOCHS = 100
-_C.SOLVER.LR = 5e-5
+_C.SOLVER.LR = 2.5e-5
 _C.SOLVER.WEIGHT_DECAY = 0
-_C.SOLVER.DROPOUT = 0.3
+_C.SOLVER.DROPOUT = 0.2
 _C.SOLVER.LOSS_FN = "cross_entropy"
 # _C.SOLVER.LOSS_FN = "dirichlet_loss"
 
 _C.DATA = CN()
-_C.DATA.TEST_CSV_PATH = "lists/db_new/db_test.csv"
-_C.DATA.TRAIN_CSV_PATH = "lists/db_new/db_train.csv"
-_C.DATA.VAL_CSV_PATH = "lists/db_new/db_val.csv"
-# _C.DATA.TEST_CSV_PATH = "/mnt/data/austin/MocFormer/DrugBank_uni_esm2_3B_pos_len_d200_p700_sim_both_neg_test.csv"
-# _C.DATA.TRAIN_CSV_PATH = "/mnt/data/austin/MocFormer/DrugBank_uni_esm2_3B_pos_len_d200_p700_sim_both_neg_train.csv"
-# _C.DATA.VAL_CSV_PATH = "/mnt/data/austin/MocFormer/DrugBank_uni_esm2_3B_pos_len_d200_p700_sim_both_neg_val.csv"
+# _C.DATA.TEST_CSV_PATH = "lists/db_new/db_test.csv"
+# _C.DATA.TRAIN_CSV_PATH = "lists/db_new/db_train.csv"
+# _C.DATA.VAL_CSV_PATH = "lists/db_new/db_val.csv"
+
+_C.DATA.TEST_CSV_PATH = "lists/KIBA/KIBA_pairs_test_stratified.csv"
+_C.DATA.TRAIN_CSV_PATH = "lists/KIBA/KIBA_pairs_train_stratified.csv"
+_C.DATA.VAL_CSV_PATH = "lists/KIBA/KIBA_pairs_val_stratified.csv"
+
 _C.DATA.PROTEIN_DIR = "embeddings"
-_C.DATA.DRUG_DIR = "drug/embeddings_atomic/"
+_C.DATA.DRUG_DIR = "drug/embeddings_atomic_KIBA/"
 _C.DATA.PROT_CACHE_SIZE = 4096
 _C.DATA.DRUG_CACHE_SIZE = 4096
+_C.DATA.DATASET_HINT = "auto"
 _C.DATA.NUM_WORKERS = 4
 _C.DATA.PREFETCH_FACTOR = 2
 _C.DATA.PERSISTENT_WORKERS = True

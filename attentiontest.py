@@ -208,7 +208,7 @@ model = Model(cfg=cfg)
 model.load_state_dict(ckpt['model_state_dict'])
 model.to(DEVICE)
 
-solver = Solver(model, cfg, device=DEVICE, optim=torch.optim.Adam, loss_fn=cfg.SOLVER.LOSS_FN, eval=None)
+solver = Solver(model, cfg, device=DEVICE, optim=torch.optim.Adam, loss_fn=cfg.SOLVER.LOSS_FN, eval=True)
 
 test_ds = MyDataset(
     args.csv,

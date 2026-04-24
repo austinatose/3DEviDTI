@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-from dataset import MyDataset, KIBADataset
+from dataset import MyDataset
 from dataset import collate_fn
 import os
 
@@ -12,7 +12,7 @@ batch_size = 4
 num_workers = 0
 
 # --- LOAD DATASET --- #
-ds = KIBADataset(csv_path, protein_dir, drug_dir)
+ds = MyDataset(csv_path, protein_dir, drug_dir)
 print(f"Dataset loaded. Total samples: {len(ds)}")
 
 # Peek one item
