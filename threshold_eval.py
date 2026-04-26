@@ -16,7 +16,7 @@ from sklearn.metrics import (
 from torch.utils.data import DataLoader
 
 from config.cfg import get_cfg_defaults
-from dataset import MyDataset, KIBADataset, collate_fn
+from dataset import MyDataset, collate_fn
 from model import Model
 from solver import Solver
 
