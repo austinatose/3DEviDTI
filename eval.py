@@ -24,7 +24,7 @@ from solver import Solver
 # CKPT_PATH = "saved/cnn321_epoch_58.pt"
 # model_4257565100199224673_epoch_36.pt
 
-CKPT_PATH = "best_models/model_-8473496469574036713_epoch_77.pt"
+CKPT_PATH = "saved/model_-615469563688727098_epoch_76.pt"
 # CKPT_PATH = "saved/model_7027097688980953402_epoch_97.pt"
 
 # Data loading performance knobs for on-demand .pt reads.
@@ -147,6 +147,7 @@ avg_sample_ms = (elapsed_time / num_samples) * 1000 if num_samples > 0 else floa
 
 print('Test accuracy: %.4f%% MCC: %.4f AUC: %.4f AUPRC: %.4f' % (val_acc, val_mcc, val_auc, val_auprc))
 print('F1: %.4f Precision: %.4f Recall: %.4f' % (val_f1, val_precision, val_recall))
+print('Paste: %.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f' % (val_acc, val_precision, val_recall, val_f1, val_mcc, val_auc, val_auprc))
 print('Inference timing: total %.4fs | %.2f samples/s | %.3f ms/batch | %.5f ms/sample' % (
 	elapsed_time,
 	samples_per_sec,
