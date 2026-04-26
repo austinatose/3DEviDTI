@@ -36,7 +36,7 @@ _C.DATA.TRAIN_CSV_PATH = "lists/KIBA/KIBA_pairs_train_stratified.csv"
 _C.DATA.VAL_CSV_PATH = "lists/KIBA/KIBA_pairs_val_stratified.csv"
 
 _C.DATA.PROTEIN_DIR = "embeddings"
-_C.DATA.DRUG_DIR = "drug/embeddings_atomic_KIBA/"
+_C.DATA.DRUG_DIR = "drug/embeddings_atomic/"
 _C.DATA.PROT_CACHE_SIZE = 4096
 _C.DATA.DRUG_CACHE_SIZE = 4096
 _C.DATA.DATASET_HINT = "auto"
