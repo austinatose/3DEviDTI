@@ -111,7 +111,7 @@ def main():
     p.add_argument("--ckpt", default="best_models/model_7607792504713019690_epoch_96.pt")
     p.add_argument("--val", default="lists/db_new/db_val.csv")
     p.add_argument("--test", default="lists/db_new/db_test.csv")
-    p.add_argument("--metric", default="f1", choices=["f1", "mcc", "youden", "accuracy"])
+    p.add_argument("--metric", default="f1", choices=["f1", "mcc", "youden", "accuracy", "recall"])
     p.add_argument("--dataset", default="my", choices=["my", "kiba"])
     p.add_argument("--num-workers", type=int, default=4)
     p.add_argument("--save-curve", default=None, help="optional path to save sweep curve as .npy")

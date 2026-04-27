@@ -14,37 +14,38 @@ from itertools import combinations
 
 metrics = ['ACC', 'PPV', 'TPR', 'F1', 'MCC', 'AUROC', 'AUPRC']
 
+# DrugBank
+
 DICE = np.array([
-    [0.810669, 0.7931, 0.8580, 0.8162, 0.6225, 0.8832, 0.8730],
-    [0.810293, 0.7931, 0.8580, 0.8134, 0.6209, 0.8835, 0.8730],
-    [0.806526, 0.7772, 0.8595, 0.8163, 0.6165, 0.8765, 0.8621],
-    [0.808415, 0.7893, 0.8415, 0.8145, 0.6182, 0.8717, 0.8648],
-    [0.809542, 0.7918, 0.8603, 0.8172, 0.6213, 0.8787, 0.8648],
+    [0.8909946, 0.76837, 0.62623, 0.69006, 0.62957, 0.92367, 0.79608],
+    [0.891435, 0.7636, 0.6368, 0.6945, 0.6330, 0.9242, 0.7943],
+    [0.8909946, 0.73590, 0.68234, 0.70810, 0.64190, 0.92311, 0.79492],
+    [0.8924636, 0.78303, 0.61562, 0.68930, 0.63202, 0.92258, 0.79243],
+    [0.8915822, 0.77175, 0.62547, 0.70988, 0.64183, 0.92200, 0.79253]
 ])
 
 MOC = np.array([
-    [0.793764, 0.779301, 0.8542,   0.8126,   0.593673, 0.878163, 0.8653  ],
-    [0.798272, 0.773040, 0.844478, 0.807181, 0.599108, 0.882604, 0.881273],
-    [0.798648, 0.773196, 0.845229, 0.807609, 0.599904, 0.882562, 0.881240],
-    [0.798648, 0.773572, 0.844478, 0.807471, 0.599820, 0.882643, 0.881391],
-    [0.796394, 0.771134, 0.842975, 0.805456, 0.595377, 0.881884, 0.880532],
+    [0.8915822, 0.739095, 0.680819, 0.708761, 0.643110, 0.92200, 0.791340],
+    [0.889085, 0.736181, 0.666414, 0.699562, 0.632934, 0.922191, 0.791280],
+    [0.889966, 0.741525, 0.663381, 0.699562, 0.634621, 0.921642, 0.790452],
+    [0.890701, 0.725490, 0.701289, 0.713184, 0.643162, 0.922468, 0.791459],
+    [0.890701, 0.733930, 0.683851, 0.708006, 0.641482, 0.922468, 0.791699]
 ])
 
-# TODO: replace these placeholder rows with your real MolTrans + DLM-DTI runs
 MOLTRANS = np.array([
-    [np.nan]*7,
-    [np.nan]*7,
-    [np.nan]*7,
-    [np.nan]*7,
-    [np.nan]*7,
+    [0.87926, 0.70763, 0.65845, 0.68215, 0.60835, 0.90530, 0.74515],
+    [0.88088, 0.69751, 0.68058, 0.68894, 0.61536, 0.90999, 0.77300],
+    [0.87971, 0.73009, 0.61659, 0.66856, 0.59889, 0.89903, 0.73276],
+    [0.88235, 0.72319, 0.65071, 0.68504, 0.61425, 0.90603, 0.75546],
+    [0.88471, 0.73617, 0.64600, 0.68815, 0.61978, 0.90291, 0.75010]
 ])
 
 DLM_DTI = np.array([
-    [np.nan]*7,
-    [np.nan]*7,
-    [np.nan]*7,
-    [np.nan]*7,
-    [np.nan]*7,
+    [0.86514, 0.65087, 0.6558, 0.65332, 0.56962 , 0.89167 , 0.72238],
+    [0.86558, 0.73059, 0.48522, 0.58314, 0.52197, 0.87968, 0.68902],
+    [0.87087, 0.70561, 0.5724, 0.63206, 0.55925, 0.88608, 0.70457],
+    [0.87234, 0.74038, 0.5254, 0.61463, 0.55219, 0.88577, 0.70503],
+    [0.86543, 0.6573, 0.63836, 0.64769, 0.56464, 0.89097, 0.7056]
 ])
 
 models_data = {
@@ -54,9 +55,10 @@ models_data = {
     '3DICE':     DICE,
 }
 
+REFERENCE = '3DICE'   # all post-hoc comparisons are baseline vs this model
 ALPHA = 0.05
 N_RUNS = 5
-CORRECTION = 'holm'   # 'holm' or 'bonferroni'
+CORRECTION = 'holm'
 
 # =====================================================================
 # Helpers
@@ -71,39 +73,37 @@ def sig_stars(p):
 def has_data(arr):
     return not np.isnan(arr).any()
 
+def direction(diff_ref_minus_baseline):
+    """diff = 3DICE - baseline. Positive means 3DICE is better."""
+    return 'better' if diff_ref_minus_baseline > 0 else 'worse'
+
 # =====================================================================
 # Per-metric analysis
 # =====================================================================
 
+active_models = {k: v for k, v in models_data.items() if has_data(v)}
+baselines = {k: v for k, v in active_models.items() if k != REFERENCE}
+ref_data = active_models[REFERENCE]
+
 print("="*100)
-print(f"REPEATED MEASURES ANOVA + PAIRED POST-HOC TESTS (correction: {CORRECTION})")
-print(f"Models: {list(models_data.keys())}")
+print(f"REPEATED MEASURES ANOVA + POST-HOC: {REFERENCE} vs each baseline ({CORRECTION}-corrected)")
+print(f"Models: {list(active_models.keys())}")
 print(f"Replications per model: {N_RUNS}")
 print("="*100)
-
-# Drop models with no real data
-active_models = {k: v for k, v in models_data.items() if has_data(v)}
-if len(active_models) < len(models_data):
-    skipped = set(models_data) - set(active_models)
-    print(f"\n[WARNING] Skipping models with placeholder NaN data: {skipped}")
-    print(f"          Running with {len(active_models)} models: {list(active_models)}\n")
-
-if len(active_models) < 2:
-    print("\n[ERROR] Need at least 2 models with data. Fill in real values and re-run.")
-    raise SystemExit
 
 for i, m in enumerate(metrics):
     print(f"\n{'='*100}")
     print(f"METRIC: {m}")
     print('='*100)
 
-    # Print mean ± std
+    # Mean ± std for all models
     print(f"  {'Model':<12} {'Mean':>10} {'Std':>10}")
     for name, data in active_models.items():
         col = data[:, i]
-        print(f"  {name:<12} {col.mean():>10.6f} {col.std(ddof=1):>10.6f}")
+        marker = ' ◄' if name == REFERENCE else ''
+        print(f"  {name:<12} {col.mean():>10.6f} {col.std(ddof=1):>10.6f}{marker}")
 
-    # --- Repeated Measures ANOVA ---
+    # --- RM-ANOVA (omnibus across all 4 models) ---
     rows = []
     for name, data in active_models.items():
         for run_idx, val in enumerate(data[:, i]):
@@ -113,152 +113,36 @@ for i, m in enumerate(metrics):
     aov = AnovaRM(df, depvar='score', subject='subject', within=['model']).fit()
     f_stat = aov.anova_table['F Value'].iloc[0]
     p_anova = aov.anova_table['Pr > F'].iloc[0]
-    print(f"\n  RM-ANOVA: F = {f_stat:.4f}, p = {p_anova:.6f}  {sig_stars(p_anova)}")
+    print(f"\n  RM-ANOVA (omnibus): F = {f_stat:.4f}, p = {p_anova:.6f}  {sig_stars(p_anova)}")
 
     if p_anova >= ALPHA:
         print(f"  → Omnibus test not significant. Skipping post-hoc.")
         continue
 
-    # --- Pairwise paired t-tests with multiple-comparison correction ---
-    print(f"\n  Post-hoc paired t-tests ({CORRECTION}-corrected):")
+    # --- Post-hoc: 3DICE vs each baseline only ---
+    # Correction applied across the 3 comparisons (not all 6 pairs)
+    print(f"\n  Post-hoc: {REFERENCE} vs each baseline ({CORRECTION}-corrected across {len(baselines)} comparisons):")
+
     pairs, raw_ps, raw_ts, mean_diffs = [], [], [], []
-    for a, b in combinations(active_models.keys(), 2):
-        a_scores = active_models[a][:, i]
-        b_scores = active_models[b][:, i]
-        t, p = stats.ttest_rel(a_scores, b_scores)
-        pairs.append((a, b))
+    for baseline_name, baseline_data in baselines.items():
+        ref_scores      = ref_data[:, i]
+        baseline_scores = baseline_data[:, i]
+        t, p = stats.ttest_rel(ref_scores, baseline_scores)
+        pairs.append(baseline_name)
         raw_ts.append(t)
         raw_ps.append(p)
-        mean_diffs.append(a_scores.mean() - b_scores.mean())
+        mean_diffs.append(ref_scores.mean() - baseline_scores.mean())  # 3DICE - baseline
 
     reject, p_corr, _, _ = multipletests(raw_ps, alpha=ALPHA, method=CORRECTION)
 
-    print(f"    {'Comparison':<25} {'mean diff':>12} {'t':>8} {'p (raw)':>10} {'p (adj)':>10} {'sig':>6}")
-    for (a, b), md, t, p_raw, p_adj in zip(pairs, mean_diffs, raw_ts, raw_ps, p_corr):
-        comparison = f"{a} vs {b}"
-        print(f"    {comparison:<25} {md:>+12.6f} {t:>8.3f} {p_raw:>10.6f} {p_adj:>10.6f} {sig_stars(p_adj):>6}")
+    print(f"    {'Comparison':<30} {'3DICE−baseline':>15} {'t':>8} {'p (raw)':>10} {'p (adj)':>10} {'result':>16}")
+    for baseline_name, md, t, p_raw, p_adj in zip(pairs, mean_diffs, raw_ts, raw_ps, p_corr):
+        comparison = f"3DICE vs {baseline_name}"
+        direc = direction(md)
+        label = f"{sig_stars(p_adj)} ({direc})" if p_adj < ALPHA else 'ns'
+        print(f"    {comparison:<30} {md:>+15.6f} {t:>8.3f} {p_raw:>10.6f} {p_adj:>10.6f} {label:>16}")
 
 print(f"\n{'='*100}")
 print("Significance: * p<0.05, ** p<0.01, *** p<0.001")
-print("Mean diff is (first model − second model). Positive = first is better.")
+print("3DICE−baseline > 0 means 3DICE is better than the baseline.")
 print('='*100)
-
-EOF
-Output
-
-====================================================================================================
-REPEATED MEASURES ANOVA + PAIRED POST-HOC TESTS (correction: holm)
-Models: ['MolTrans', 'DLM-DTI', 'MocFormer', '3DICE']
-Replications per model: 5
-====================================================================================================
-
-[WARNING] Skipping models with placeholder NaN data: {'DLM-DTI', 'MolTrans'}
-          Running with 2 models: ['MocFormer', '3DICE']
-
-
-====================================================================================================
-METRIC: ACC
-====================================================================================================
-  Model              Mean        Std
-  MocFormer      0.797145   0.002109
-  3DICE          0.809089   0.001671
-
-  RM-ANOVA: F = 60.2696, p = 0.001484  **
-
-  Post-hoc paired t-tests (holm-corrected):
-    Comparison                   mean diff        t    p (raw)    p (adj)    sig
-    MocFormer vs 3DICE           -0.011944   -7.763   0.001484   0.001484     **
-
-====================================================================================================
-METRIC: PPV
-====================================================================================================
-  Model              Mean        Std
-  MocFormer      0.774049   0.003084
-  3DICE          0.788900   0.006722
-
-  RM-ANOVA: F = 24.4418, p = 0.007795  **
-
-  Post-hoc paired t-tests (holm-corrected):
-    Comparison                   mean diff        t    p (raw)    p (adj)    sig
-    MocFormer vs 3DICE           -0.014851   -4.944   0.007795   0.007795     **
-
-====================================================================================================
-METRIC: TPR
-====================================================================================================
-  Model              Mean        Std
-  MocFormer      0.846272   0.004507
-  3DICE          0.855460   0.007867
-
-  RM-ANOVA: F = 5.8650, p = 0.072623  ns
-  → Omnibus test not significant. Skipping post-hoc.
-
-====================================================================================================
-METRIC: F1
-====================================================================================================
-  Model              Mean        Std
-  MocFormer      0.808063   0.002679
-  3DICE          0.815520   0.001535
-
-  RM-ANOVA: F = 30.4717, p = 0.005258  **
-
-  Post-hoc paired t-tests (holm-corrected):
-    Comparison                   mean diff        t    p (raw)    p (adj)    sig
-    MocFormer vs 3DICE           -0.007457   -5.520   0.005258   0.005258     **
-
-====================================================================================================
-METRIC: MCC
-====================================================================================================
-  Model              Mean        Std
-  MocFormer      0.597576   0.002867
-  3DICE          0.619880   0.002458
-
-  RM-ANOVA: F = 95.7668, p = 0.000611  ***
-
-  Post-hoc paired t-tests (holm-corrected):
-    Comparison                   mean diff        t    p (raw)    p (adj)    sig
-    MocFormer vs 3DICE           -0.022304   -9.786   0.000611   0.000611    ***
-
-====================================================================================================
-METRIC: AUROC
-====================================================================================================
-  Model              Mean        Std
-  MocFormer      0.881571   0.001931
-  3DICE          0.878720   0.004928
-
-  RM-ANOVA: F = 1.0685, p = 0.359681  ns
-  → Omnibus test not significant. Skipping post-hoc.
-
-====================================================================================================
-METRIC: AUPRC
-====================================================================================================
-  Model              Mean        Std
-  MocFormer      0.877947   0.007078
-  3DICE          0.867540   0.005105
-
-  RM-ANOVA: F = 4.5577, p = 0.099659  ns
-  → Omnibus test not significant. Skipping post-hoc.
-
-====================================================================================================
-Significance: * p<0.05, ** p<0.01, *** p<0.001
-Mean diff is (first model − second model). Positive = first is better.
-====================================================================================================
-Done
-The script is structured to plug in your MolTrans and DLM-DTI numbers directly. Just replace the [np.nan]*7 rows in the MOLTRANS and DLM_DTI arrays with your actual replicate scores (in the same column order: ACC, PPV, TPR, F1, MCC, AUROC, AUPRC), and re-run.
-
-How the pipeline works once all 4 models are filled in:
-
-Per metric, RM-ANOVA tests whether any of the 4 models differ from the others. F-statistic and p-value are reported.
-If the omnibus is significant (p < 0.05), the script runs all 6 pairwise paired t-tests (4 choose 2 = 6 comparisons): MolTrans vs DLM-DTI, MolTrans vs MocFormer, MolTrans vs 3DICE, DLM-DTI vs MocFormer, DLM-DTI vs 3DICE, MocFormer vs 3DICE.
-Holm correction is applied to control the family-wise error rate across the 6 comparisons. Holm is uniformly more powerful than Bonferroni at the same FWER, so I've defaulted to it — switch to 'bonferroni' if a reviewer specifically asks for it.
-If omnibus is not significant, post-hoc tests are skipped — this is the standard "protected" ANOVA procedure, which preserves the type-I error rate.
-A few practical notes for when you run with all 4 models:
-
-The current 2-model output is essentially a sanity check — F = t² for paired t-test, so RM-ANOVA p-values exactly match the paired t-test p-values you saw earlier.
-With 4 models and only 5 runs you have 12 residual degrees of freedom — adequate but not abundant. If a near-significant comparison is critical, increasing replications is the cleanest fix.
-In your write-up, you can present this as a per-metric table with three columns: ANOVA p, then the row of 6 corrected pairwise p-values. Or annotate the existing performance tables with letter groupings (models sharing a letter are not significantly different).
-
-
-
-
-
-
