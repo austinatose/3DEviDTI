@@ -31,9 +31,9 @@ _C.DATA = CN()
 # _C.DATA.TRAIN_CSV_PATH = "lists/db_new/db_train.csv"
 # _C.DATA.VAL_CSV_PATH = "lists/db_new/db_val.csv"
 
-_C.DATA.TEST_CSV_PATH = "lists/KIBA/KIBA_pairs_test_stratified.csv"
-_C.DATA.TRAIN_CSV_PATH = "lists/KIBA/KIBA_pairs_train_stratified.csv"
-_C.DATA.VAL_CSV_PATH = "lists/KIBA/KIBA_pairs_val_stratified.csv"
+_C.DATA.TEST_CSV_PATH = "lists/db_new/db_drug_cs_test.csv"
+_C.DATA.TRAIN_CSV_PATH = "lists/db_new/db_drug_cs_train.csv"
+_C.DATA.VAL_CSV_PATH = "lists/db_new/db_drug_cs_val.csv"
 
 _C.DATA.PROTEIN_DIR = "embeddings"
 _C.DATA.DRUG_DIR = "drug/embeddings_atomic/"
