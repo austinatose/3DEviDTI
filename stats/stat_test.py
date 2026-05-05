@@ -87,12 +87,34 @@ def slugify(text):
     slug = re.sub(r'[^A-Za-z0-9._-]+', '_', text.strip())
     return slug.strip('_') or 'experiment'
 
-def coerce_model_arrays(raw_models):
+def _load_json_lenient(path):
+    """Load JSON, stripping trailing commas that some editors leave behind."""
+    with open(path, 'r', encoding='utf-8') as f:
+        text = f.read()
+    text = re.sub(r',\s*([}\]])', r'\1', text)
+    return json.loads(text)
+
+def coerce_model_arrays(raw_models, n_metrics):
+    """Convert raw model dicts to numpy arrays, skipping invalid entries with a warning."""
     models = {}
     for model_name, values in raw_models.items():
-        arr = np.asarray(values, dtype=float)
+        try:
+            arr = np.asarray(values, dtype=float)
+        except (ValueError, TypeError) as exc:
+            print(f"  [skip] '{model_name}': cannot convert to array ({exc})")
+            continue
         if arr.ndim != 2:
-            raise ValueError(f"Model '{model_name}' must be a 2D array: runs x metrics.")
+            print(f"  [skip] '{model_name}': expected 2-D array (runs × metrics), got shape {arr.shape}")
+            continue
+        if arr.shape[0] == 0:
+            print(f"  [skip] '{model_name}': no data rows")
+            continue
+        if arr.shape[1] != n_metrics:
+            print(f"  [skip] '{model_name}': {arr.shape[1]} metric columns, expected {n_metrics}")
+            continue
+        if np.isnan(arr).any():
+            print(f"  [skip] '{model_name}': contains NaN values")
+            continue
         models[model_name] = arr
     return models
 
@@ -110,16 +132,30 @@ def normalize_experiment(raw_exp, fallback_name, fallback_metrics=None):
     exp_name = raw_exp.get('name') or raw_exp.get('experiment_name') or fallback_name
     exp_reference = raw_exp.get('reference') or raw_exp.get('baseline_reference') or REFERENCE
 
+    exp_metrics = [str(m) for m in exp_metrics]
+    valid_models = coerce_model_arrays(raw_models, len(exp_metrics))
+
+    if not valid_models:
+        raise ValueError(f"Experiment '{exp_name}': no valid model arrays found.")
+
+    # Align run counts: keep only models that share the most common number of runs
+    from collections import Counter
+    run_counts = Counter(v.shape[0] for v in valid_models.values())
+    target_runs = run_counts.most_common(1)[0][0]
+    mismatched = [k for k, v in valid_models.items() if v.shape[0] != target_runs]
+    if mismatched:
+        print(f"  [skip] '{exp_name}': dropping models with run-count ≠ {target_runs}: {mismatched}")
+        valid_models = {k: v for k, v in valid_models.items() if v.shape[0] == target_runs}
+
     return {
         'name': str(exp_name),
-        'metrics': [str(metric) for metric in exp_metrics],
-        'models_data': coerce_model_arrays(raw_models),
+        'metrics': exp_metrics,
+        'models_data': valid_models,
         'reference': str(exp_reference),
     }
 
 def load_experiments_from_json(json_path):
-    with open(json_path, 'r', encoding='utf-8') as f:
-        payload = json.load(f)
+    payload = _load_json_lenient(json_path)
 
     if 'experiments' not in payload:
         return [normalize_experiment(payload, payload.get('name', Path(json_path).stem))]
@@ -262,7 +298,7 @@ def plot_mcsim_heatmap(metric_name, metric_idx, out_dir):
         vmax = 1e-6
 
     fig, ax = plt.subplots(figsize=(6.5, 5.6))
-    im = ax.imshow(mean_diff_matrix, cmap='RdBu_r', vmin=-vmax, vmax=vmax)
+    im = ax.imshow(mean_diff_matrix, cmap='coolwarm', vmin=-vmax, vmax=vmax, alpha=0.7)
     ax.set_xticks(range(n_models), labels=model_names, rotation=35, ha='right')
     ax.set_yticks(range(n_models), labels=model_names)
     ax.set_title(f'{metric_name}: pairwise mean differences')
@@ -275,7 +311,7 @@ def plot_mcsim_heatmap(metric_name, metric_idx, out_dir):
                 text = '0'
             else:
                 text = f'{mean_diff_matrix[row_idx, col_idx]:+.4f}\n{star_matrix[row_idx, col_idx]}'
-            ax.text(col_idx, row_idx, text, ha='center', va='center', fontsize=9)
+            ax.text(col_idx, row_idx, text, ha='center', va='center', fontsize=9, color='#1a1a1a')
 
     cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     cbar.set_label('Mean difference (row - column)')
@@ -319,7 +355,7 @@ def plot_all_mcsim_heatmaps(out_dir):
         vmax = max(abs(mean_diff_matrix.min()), abs(mean_diff_matrix.max()))
         if vmax == 0:
             vmax = 1e-6
-        im = ax.imshow(mean_diff_matrix, cmap='RdBu_r', vmin=-vmax, vmax=vmax)
+        im = ax.imshow(mean_diff_matrix, cmap='coolwarm', vmin=-vmax, vmax=vmax, alpha=0.7)
         ax.set_title(metric_name)
         ax.set_xticks(range(n_models), labels=model_names, rotation=45, ha='right', fontsize=8)
         ax.set_yticks(range(n_models), labels=model_names, fontsize=8)
@@ -327,7 +363,7 @@ def plot_all_mcsim_heatmaps(out_dir):
         for row_idx in range(n_models):
             for col_idx in range(n_models):
                 text = '0' if row_idx == col_idx else f'{mean_diff_matrix[row_idx, col_idx]:+.3f}\n{star_matrix[row_idx, col_idx]}'
-                ax.text(col_idx, row_idx, text, ha='center', va='center', fontsize=7)
+                ax.text(col_idx, row_idx, text, ha='center', va='center', fontsize=7, color='#1a1a1a')
 
         fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 
@@ -412,25 +448,100 @@ def plot_all_reference_forests(out_dir):
     fig.savefig(out_dir / 'forest_ci_all_metrics.png', dpi=300, bbox_inches='tight')
     plt.close(fig)
 
-def make_plots(out_dir):
+def plot_performance_heatmap(experiment_name, out_dir):
+    """Single heatmap: rows = metrics, columns = models.
+
+    Cells show mean ± std.  Colour is row-normalised so relative model
+    differences are visible regardless of each metric's absolute scale.
+    The reference model column is outlined with a bold border.
+    """
+    # Sort models: reference first, then descending by mean-of-means
+    other_names = sorted(
+        [n for n in active_models if n != REFERENCE],
+        key=lambda n: active_models[n].mean(),
+        reverse=True,
+    )
+    model_names = [REFERENCE] + other_names
+    n_models = len(model_names)
+    n_met = len(metrics)
+
+    # Build mean and std matrices  (n_metrics × n_models)
+    mean_mat = np.zeros((n_met, n_models))
+    std_mat  = np.zeros((n_met, n_models))
+    for col_idx, name in enumerate(model_names):
+        for row_idx in range(n_met):
+            vals = active_models[name][:, row_idx]
+            mean_mat[row_idx, col_idx] = vals.mean()
+            std_mat[row_idx, col_idx]  = vals.std(ddof=1)
+
+    # Row-normalise: scale each metric row to [0, 1] for colouring
+    row_min = mean_mat.min(axis=1, keepdims=True)
+    row_max = mean_mat.max(axis=1, keepdims=True)
+    row_range = np.where(row_max - row_min > 0, row_max - row_min, 1.0)
+    norm_mat = (mean_mat - row_min) / row_range
+
+    fig_w = max(3.5, 1.5 * n_models + 1.2)
+    fig_h = max(3.0, 0.75 * n_met + 1.2)
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+
+    im = ax.imshow(norm_mat, cmap='YlGnBu', vmin=0, vmax=1, aspect='auto')
+
+    ax.set_xticks(range(n_models))
+    ax.set_xticklabels(model_names, rotation=35, ha='right', fontsize=9)
+    ax.set_yticks(range(n_met))
+    ax.set_yticklabels(metrics, fontsize=9)
+    ax.set_title(f'{experiment_name}: performance overview (mean ± std)', pad=10)
+
+    # Cell text
+    for row_idx in range(n_met):
+        for col_idx in range(n_models):
+            brightness = norm_mat[row_idx, col_idx]
+            txt_color = 'white' if brightness > 0.6 else '#1a1a1a'
+            ax.text(
+                col_idx, row_idx,
+                f'{mean_mat[row_idx, col_idx]:.4f}\n±{std_mat[row_idx, col_idx]:.4f}',
+                ha='center', va='center', fontsize=7, color=txt_color,
+            )
+
+    # Bold outline on reference column
+    # ref_col = model_names.index(REFERENCE)
+    # for row_idx in range(n_met):
+    #     ax.add_patch(plt.Rectangle(
+    #         (ref_col - 0.5, row_idx - 0.5), 1, 1,
+    #         fill=False, edgecolor='#e05c00', linewidth=1.8, zorder=5,
+    #     ))
+
+    cbar = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
+    cbar.set_label('Row-normalised score', fontsize=8)
+    cbar.set_ticks([0, 0.5, 1])
+    cbar.set_ticklabels(['min', 'mid', 'max'], fontsize=7)
+
+    fig.tight_layout()
+    fig.savefig(out_dir / 'performance_heatmap.png', dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+
+def make_plots(out_dir, experiment_name):
     out_dir.mkdir(parents=True, exist_ok=True)
     # for metric_idx, metric_name in enumerate(metrics):
     #     plot_mcsim_heatmap(metric_name, metric_idx, out_dir)
     #     plot_reference_forest(metric_name, metric_idx, out_dir)
     plot_all_mcsim_heatmaps(out_dir)
     plot_all_reference_forests(out_dir)
-    print(f"\nSaved MCSim heatmaps and forest CI plots to: {out_dir.resolve()}")
+    plot_performance_heatmap(experiment_name, out_dir)
+    print(f"\nSaved plots to: {out_dir.resolve()}")
 
 # =====================================================================
 # Per-metric analysis
 # =====================================================================
 
 def validate_experiment_shapes():
+    """Returns run count, or raises ValueError with a descriptive message."""
     if REFERENCE not in models_data:
-        raise ValueError(f"Reference model '{REFERENCE}' is not present in models_data.")
+        raise ValueError(f"Reference model '{REFERENCE}' not present after filtering. Available: {list(models_data.keys())}")
 
     if len(models_data) < 2:
-        raise ValueError("At least two models are required.")
+        raise ValueError(f"Need at least 2 valid models, got: {list(models_data.keys())}")
 
     expected_n_metrics = len(metrics)
     run_counts = set()
@@ -438,12 +549,12 @@ def validate_experiment_shapes():
         if data.shape[1] != expected_n_metrics:
             raise ValueError(
                 f"Model '{model_name}' has {data.shape[1]} metrics, "
-                f"but metrics lists {expected_n_metrics} names."
+                f"but metrics list has {expected_n_metrics} names."
             )
         run_counts.add(data.shape[0])
 
     if len(run_counts) != 1:
-        raise ValueError(f"All models must have the same number of runs. Got run counts: {sorted(run_counts)}")
+        raise ValueError(f"Inconsistent run counts: {sorted(run_counts)}")
 
     return run_counts.pop()
 
@@ -459,6 +570,10 @@ def run_experiment(experiment, base_plot_dir):
     active_models = {k: v for k, v in models_data.items() if has_data(v)}
     baselines = {k: v for k, v in active_models.items() if k != REFERENCE}
     ref_data = active_models[REFERENCE]
+
+    if not baselines:
+        print(f"[skip] Experiment '{experiment_name}': no valid baseline models to compare against.")
+        return
 
     out_dir = base_plot_dir / slugify(experiment_name)
 
@@ -524,7 +639,7 @@ def run_experiment(experiment, base_plot_dir):
     print(f"{REFERENCE}-baseline > 0 means {REFERENCE} is better than the baseline.")
     print('='*100)
 
-    make_plots(out_dir)
+    make_plots(out_dir, experiment_name)
 
 def main():
     args = parse_args()
@@ -549,7 +664,10 @@ def main():
     for idx, experiment in enumerate(experiments):
         if idx > 0:
             print("\n")
-        run_experiment(experiment, args.plot_dir)
+        try:
+            run_experiment(experiment, args.plot_dir)
+        except ValueError as exc:
+            print(f"[skip] Experiment '{experiment.get('name', '?')}': {exc}")
 
 if __name__ == '__main__':
     main()
