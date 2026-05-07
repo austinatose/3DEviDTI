@@ -512,7 +512,7 @@ def plot_performance_heatmap(experiment_name, out_dir):
     #     ))
 
     cbar = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
-    cbar.set_label('Row-normalised score', fontsize=8)
+    cbar.set_label('Score', fontsize=8)
     cbar.set_ticks([0, 0.5, 1])
     cbar.set_ticklabels(['min', 'mid', 'max'], fontsize=7)
 
