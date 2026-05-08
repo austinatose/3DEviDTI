@@ -250,6 +250,78 @@ def create_dataset(csv_path, protein_dir, drug_dir, **kwargs):
     """Factory for default dataset creation with auto dataset-kind detection."""
     return MyDataset(csv_path, protein_dir, drug_dir, **kwargs)
 
+
+class NoisyDataset(MyDataset):
+    """MyDataset variant that replaces ONE side's embeddings with per-token Gaussian
+    noise drawn from supplied per-dim mean/std vectors. The other side is unchanged.
+
+    Per-token-fresh: each call to _load_drug / _load_prot returns a brand new noise
+    tensor, so the model cannot memorize an entity-noise mapping. Real disk reads
+    happen only once per unique entity (to capture the embedding shape); subsequent
+    calls just generate noise of the cached shape.
+
+    The noised side's lru_cache is forced off so the freshness is preserved.
+    """
+
+    def __init__(self, csv_path, protein_dir, drug_dir, *,
+                 noise_side: str,
+                 drug_mean: torch.Tensor,
+                 drug_std: torch.Tensor,
+                 prot_mean: torch.Tensor,
+                 prot_std: torch.Tensor,
+                 prot_cache_size: int = 4096,
+                 drug_cache_size: int = 4096,
+                 use_pandas: bool = True,
+                 dataset_hint: str = "auto",
+                 allow_unimol_suffix: bool | None = None,
+                 trim_terminal_token: bool | None = None):
+        if noise_side not in {"drug", "protein"}:
+            raise ValueError(f"noise_side must be 'drug' or 'protein', got {noise_side!r}")
+        if noise_side == "drug":
+            drug_cache_size = 0
+        else:
+            prot_cache_size = 0
+
+        super().__init__(
+            csv_path, protein_dir, drug_dir,
+            prot_cache_size=prot_cache_size,
+            drug_cache_size=drug_cache_size,
+            use_pandas=use_pandas,
+            dataset_hint=dataset_hint,
+            allow_unimol_suffix=allow_unimol_suffix,
+            trim_terminal_token=trim_terminal_token,
+        )
+
+        self.noise_side = noise_side
+        self.drug_mean = drug_mean.float().contiguous()
+        self.drug_std = drug_std.float().contiguous()
+        self.prot_mean = prot_mean.float().contiguous()
+        self.prot_std = prot_std.float().contiguous()
+        self._drug_shape: dict[str, tuple] = {}
+        self._prot_shape: dict[str, tuple] = {}
+
+    def _load_drug(self, drug_id: str):
+        if self.noise_side != "drug":
+            return super()._load_drug(drug_id)
+        key = str(drug_id)
+        shape = self._drug_shape.get(key)
+        if shape is None:
+            real = super()._load_drug(key)
+            shape = tuple(real.shape)
+            self._drug_shape[key] = shape
+        return (torch.randn(shape, dtype=torch.float32) * self.drug_std + self.drug_mean).contiguous()
+
+    def _load_prot(self, uniprot_id: str):
+        if self.noise_side != "protein":
+            return super()._load_prot(uniprot_id)
+        key = str(uniprot_id)
+        shape = self._prot_shape.get(key)
+        if shape is None:
+            real = super()._load_prot(key)
+            shape = tuple(real.shape)
+            self._prot_shape[key] = shape
+        return (torch.randn(shape, dtype=torch.float32) * self.prot_std + self.prot_mean).contiguous()
+
 def collate_std(batch):
         # pull fields
     prot_list = [b[0]["protein_emb"] for b in batch]   # each: (Lp, d)
