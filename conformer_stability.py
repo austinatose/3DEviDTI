@@ -34,16 +34,14 @@ RDLogger.DisableLog("rdApp.*")
 # ---------------------------------------------------------------------------
 
 DEVICE = torch.device(
-    "cuda" if torch.cuda.is_available()
-    else "mps" if torch.backends.mps.is_available()
-    else "cpu"
+    "mps"
 )
 
 # User-provided original overall metrics (training baseline run)
 ORIGINAL_OVERALL_METRICS = {
-    "acc": 0.80909,
-    "mcc": 0.61988,
-    "auroc": 0.87872,
+    "acc": 0.81984,
+    "mcc": 0.64030,
+    "auroc": 0.89329,
 }
 
 
@@ -471,7 +469,7 @@ def summarize_delta_test(values):
 def main():
     parser = argparse.ArgumentParser(description="Conformer stability analysis")
     parser.add_argument("--ckpt", type=str,
-                        default="best_models/model_-7649301121676988024_epoch_56.pt",
+                        default="saved/model_6044491872843893979_epoch_50.pt",
                         help="Path to model checkpoint")
     parser.add_argument("--test-csv", type=str,
                         default="lists/db_new/db_test.csv",

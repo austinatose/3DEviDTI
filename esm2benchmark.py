@@ -303,6 +303,8 @@ def run_epoch(
 	cm = confusion_matrix(y_true, y_pred) if len(y_true) else np.zeros((2, 2), dtype=int)
 	avg_loss = (total_loss / steps) if steps else float("nan")
 
+	print('Paste: %.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f' % (acc, prec, rec, f1, mcc, auc, auprc))
+
 	return {
 		"loss": avg_loss,
 		"accuracy": acc,

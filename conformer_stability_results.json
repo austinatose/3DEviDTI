@@ -1,0 +1,8101 @@
+{
+  "config": {
+    "checkpoint": "saved/model_6044491872843893979_epoch_50.pt",
+    "test_csv": "lists/db_new/db_test.csv",
+    "K": 5,
+    "samples_per_bin": 30,
+    "conformer_seeds": [
+      6776679,
+      6783446,
+      6790213,
+      6796980,
+      6803747
+    ],
+    "seed": 42
+  },
+  "representativeness_check": {
+    "note": "Compares baseline subsample metrics against published full test-set metrics. Differences reflect subsampling variance, NOT conformer instability. Do NOT use ORIGINAL_OVERALL_METRICS as mu0 in a conformer-stability t-test.",
+    "original_overall_metrics": {
+      "acc": 0.81984,
+      "mcc": 0.6403,
+      "auroc": 0.89329
+    },
+    "baseline_subsample_acc": 0.8210116731517509,
+    "baseline_subsample_mcc": 0.6392337946649457,
+    "baseline_subsample_auroc": 0.8597731983904402
+  },
+  "timing": {
+    "wall_time_s": 118.44,
+    "conformer_gen_s": 75.67,
+    "unimol_embed_s": 28.24,
+    "inference_s": 42.25,
+    "conformer_failures": 5,
+    "drugs_skipped": 1,
+    "protein_misses": 0
+  },
+  "overall": {
+    "n_pairs": 257,
+    "n_drugs": 89,
+    "mean_flip_rate": 0.054474708171206226,
+    "mean_prob_std": 0.04554153039429254,
+    "mean_prob_range": 0.11783432449246575,
+    "max_prob_range": 0.9541163593530655,
+    "majority_vote_acc": 0.8326848249027238,
+    "majority_vote_acc_std": 0.02226618635969388,
+    "majority_vote_mcc": 0.6629249250740832,
+    "majority_vote_mcc_std": 0.046049354496216034,
+    "mean_prob_auroc": 0.8669369589074503,
+    "mean_prob_auroc_std": 0.022098287847324226,
+    "baseline_n_pairs": 257,
+    "baseline_acc": 0.8210116731517509,
+    "baseline_mcc": 0.6392337946649457,
+    "baseline_auroc": 0.8597731983904402
+  },
+  "per_bin": {
+    "<=3": {
+      "n_pairs": 91,
+      "n_drugs": 30,
+      "mean_flip_rate": 0.017582417582417582,
+      "mean_prob_std": 0.020242351674051785,
+      "mean_prob_range": 0.051429209968925936,
+      "max_prob_range": 0.8702978417277336,
+      "majority_vote_acc": 0.8351648351648352,
+      "majority_vote_acc_std": 0.04107417573230061,
+      "majority_vote_mcc": 0.6705314009661836,
+      "majority_vote_mcc_std": 0.0769211039795168,
+      "mean_prob_auroc": 0.8611111111111112,
+      "mean_prob_auroc_std": 0.04498028887070982,
+      "baseline_n_pairs": 91,
+      "baseline_acc": 0.8241758241758241,
+      "baseline_mcc": 0.649105924052518,
+      "baseline_auroc": 0.8613526570048309
+    },
+    "4-8": {
+      "n_pairs": 92,
+      "n_drugs": 30,
+      "mean_flip_rate": 0.0673913043478261,
+      "mean_prob_std": 0.05148884299613653,
+      "mean_prob_range": 0.133645447886641,
+      "max_prob_range": 0.9440680900588632,
+      "majority_vote_acc": 0.8913043478260869,
+      "majority_vote_acc_std": 0.033310562480673114,
+      "majority_vote_mcc": 0.7800095648015304,
+      "majority_vote_mcc_std": 0.062269220058821934,
+      "mean_prob_auroc": 0.9201339072214252,
+      "mean_prob_auroc_std": 0.033366594879329275,
+      "baseline_n_pairs": 92,
+      "baseline_acc": 0.8695652173913043,
+      "baseline_mcc": 0.7354619868961754,
+      "baseline_auroc": 0.9201339072214252
+    },
+    ">=9": {
+      "n_pairs": 74,
+      "n_drugs": 29,
+      "mean_flip_rate": 0.08378378378378379,
+      "mean_prob_std": 0.06925872639662038,
+      "mean_prob_range": 0.1798375957002766,
+      "max_prob_range": 0.9541163593530655,
+      "majority_vote_acc": 0.7567567567567568,
+      "majority_vote_acc_std": 0.04852066498520277,
+      "majority_vote_mcc": 0.5015218542338612,
+      "majority_vote_mcc_std": 0.10487815197124072,
+      "mean_prob_auroc": 0.8020833333333334,
+      "mean_prob_auroc_std": 0.05319990762752033,
+      "baseline_n_pairs": 74,
+      "baseline_acc": 0.7567567567567568,
+      "baseline_mcc": 0.5015218542338612,
+      "baseline_auroc": 0.7957589285714286
+    }
+  },
+  "seed_level_tests": {
+    "overall": {
+      "baseline_metrics": {
+        "acc": 0.81984,
+        "mcc": 0.6403,
+        "auroc": 0.89329
+      },
+      "n_seeds": 5,
+      "acc_delta": {
+        "n": 5,
+        "mean": -0.005054007782101166,
+        "std": 0.012787297062377403,
+        "ci95_low": -0.02093153417879197,
+        "ci95_high": 0.010823518614589639,
+        "t": -0.8837758991961715,
+        "p": 0.4267375943224963,
+        "df": 4,
+        "effect_size_dz": -0.39523659749572826,
+        "p_bonferroni": 1.0
+      },
+      "mcc_delta": {
+        "n": 5,
+        "mean": -0.013511236012388994,
+        "std": 0.025460449265508067,
+        "ci95_low": -0.04512455924346389,
+        "ci95_high": 0.0181020872186859,
+        "t": -1.1866264365049528,
+        "p": 0.3010358841747273,
+        "df": 4,
+        "effect_size_dz": -0.5306754751846825,
+        "p_bonferroni": 1.0
+      },
+      "auroc_delta": {
+        "n": 5,
+        "mean": -0.02930390074381173,
+        "std": 0.002737413330212083,
+        "ci95_low": -0.03270284832413915,
+        "ci95_high": -0.025904953163484304,
+        "t": -23.93701869786432,
+        "p": 1.806486822743143e-05,
+        "df": 4,
+        "effect_size_dz": -10.704960197421626,
+        "p_bonferroni": 0.00021677841872917714
+      },
+      "per_seed": [
+        {
+          "seed": 6776679,
+          "n_pairs": 257,
+          "acc": 0.8210116731517509,
+          "mcc": 0.6392337946649457,
+          "auroc": 0.8597731983904402,
+          "acc_delta_vs_baseline": 0.0011716731517509293,
+          "mcc_delta_vs_baseline": -0.0010662053350543044,
+          "auroc_delta_vs_baseline": -0.03351680160955983
+        },
+        {
+          "seed": 6783446,
+          "n_pairs": 257,
+          "acc": 0.8210116731517509,
+          "mcc": 0.6390073904057569,
+          "auroc": 0.8653213022802098,
+          "acc_delta_vs_baseline": 0.0011716731517509293,
+          "mcc_delta_vs_baseline": -0.0012926095942430438,
+          "auroc_delta_vs_baseline": -0.02796869771979027
+        },
+        {
+          "seed": 6790213,
+          "n_pairs": 257,
+          "acc": 0.7976653696498055,
+          "mcc": 0.5932042214552267,
+          "auroc": 0.8641324228752592,
+          "acc_delta_vs_baseline": -0.022174630350194513,
+          "mcc_delta_vs_baseline": -0.047095778544773315,
+          "auroc_delta_vs_baseline": -0.029157577124740874
+        },
+        {
+          "seed": 6796980,
+          "n_pairs": 257,
+          "acc": 0.8054474708171206,
+          "mcc": 0.607573779661326,
+          "auroc": 0.8635227411291306,
+          "acc_delta_vs_baseline": -0.014392529182879366,
+          "mcc_delta_vs_baseline": -0.032726220338674006,
+          "auroc_delta_vs_baseline": -0.029767258870869395
+        },
+        {
+          "seed": 6803747,
+          "n_pairs": 257,
+          "acc": 0.8287937743190662,
+          "mcc": 0.6549246337507997,
+          "auroc": 0.8671808316059018,
+          "acc_delta_vs_baseline": 0.008953774319066188,
+          "mcc_delta_vs_baseline": 0.014624633750799698,
+          "auroc_delta_vs_baseline": -0.02610916839409827
+        }
+      ]
+    },
+    "per_bin": {
+      "<=3": {
+        "baseline_metrics": {},
+        "n_seeds": 5,
+        "acc_delta": {
+          "n": 0,
+          "mean": null,
+          "std": null,
+          "ci95_low": null,
+          "ci95_high": null,
+          "t": null,
+          "p": null,
+          "df": null,
+          "effect_size_dz": null,
+          "p_bonferroni": null
+        },
+        "mcc_delta": {
+          "n": 0,
+          "mean": null,
+          "std": null,
+          "ci95_low": null,
+          "ci95_high": null,
+          "t": null,
+          "p": null,
+          "df": null,
+          "effect_size_dz": null,
+          "p_bonferroni": null
+        },
+        "auroc_delta": {
+          "n": 0,
+          "mean": null,
+          "std": null,
+          "ci95_low": null,
+          "ci95_high": null,
+          "t": null,
+          "p": null,
+          "df": null,
+          "effect_size_dz": null,
+          "p_bonferroni": null
+        },
+        "per_seed": [
+          {
+            "seed": 6776679,
+            "n_pairs": 91,
+            "acc": 0.8241758241758241,
+            "mcc": 0.649105924052518,
+            "auroc": 0.8613526570048309,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          },
+          {
+            "seed": 6783446,
+            "n_pairs": 91,
+            "acc": 0.8351648351648352,
+            "mcc": 0.6705314009661836,
+            "auroc": 0.8743961352657005,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          },
+          {
+            "seed": 6790213,
+            "n_pairs": 91,
+            "acc": 0.8021978021978022,
+            "mcc": 0.6070762084692078,
+            "auroc": 0.8620772946859904,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          },
+          {
+            "seed": 6796980,
+            "n_pairs": 91,
+            "acc": 0.8241758241758241,
+            "mcc": 0.649105924052518,
+            "auroc": 0.855072463768116,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          },
+          {
+            "seed": 6803747,
+            "n_pairs": 91,
+            "acc": 0.8351648351648352,
+            "mcc": 0.6705314009661836,
+            "auroc": 0.8613526570048309,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          }
+        ]
+      },
+      "4-8": {
+        "baseline_metrics": {},
+        "n_seeds": 5,
+        "acc_delta": {
+          "n": 0,
+          "mean": null,
+          "std": null,
+          "ci95_low": null,
+          "ci95_high": null,
+          "t": null,
+          "p": null,
+          "df": null,
+          "effect_size_dz": null,
+          "p_bonferroni": null
+        },
+        "mcc_delta": {
+          "n": 0,
+          "mean": null,
+          "std": null,
+          "ci95_low": null,
+          "ci95_high": null,
+          "t": null,
+          "p": null,
+          "df": null,
+          "effect_size_dz": null,
+          "p_bonferroni": null
+        },
+        "auroc_delta": {
+          "n": 0,
+          "mean": null,
+          "std": null,
+          "ci95_low": null,
+          "ci95_high": null,
+          "t": null,
+          "p": null,
+          "df": null,
+          "effect_size_dz": null,
+          "p_bonferroni": null
+        },
+        "per_seed": [
+          {
+            "seed": 6776679,
+            "n_pairs": 92,
+            "acc": 0.8695652173913043,
+            "mcc": 0.7354619868961754,
+            "auroc": 0.9201339072214252,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          },
+          {
+            "seed": 6783446,
+            "n_pairs": 92,
+            "acc": 0.8695652173913043,
+            "mcc": 0.7354619868961754,
+            "auroc": 0.9239598278335724,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          },
+          {
+            "seed": 6790213,
+            "n_pairs": 92,
+            "acc": 0.8913043478260869,
+            "mcc": 0.7800095648015304,
+            "auroc": 0.9100908656145384,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          },
+          {
+            "seed": 6796980,
+            "n_pairs": 92,
+            "acc": 0.8478260869565217,
+            "mcc": 0.691209205474038,
+            "auroc": 0.926829268292683,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          },
+          {
+            "seed": 6803747,
+            "n_pairs": 92,
+            "acc": 0.8695652173913043,
+            "mcc": 0.7360114777618364,
+            "auroc": 0.9196556671449068,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          }
+        ]
+      },
+      ">=9": {
+        "baseline_metrics": {},
+        "n_seeds": 5,
+        "acc_delta": {
+          "n": 0,
+          "mean": null,
+          "std": null,
+          "ci95_low": null,
+          "ci95_high": null,
+          "t": null,
+          "p": null,
+          "df": null,
+          "effect_size_dz": null,
+          "p_bonferroni": null
+        },
+        "mcc_delta": {
+          "n": 0,
+          "mean": null,
+          "std": null,
+          "ci95_low": null,
+          "ci95_high": null,
+          "t": null,
+          "p": null,
+          "df": null,
+          "effect_size_dz": null,
+          "p_bonferroni": null
+        },
+        "auroc_delta": {
+          "n": 0,
+          "mean": null,
+          "std": null,
+          "ci95_low": null,
+          "ci95_high": null,
+          "t": null,
+          "p": null,
+          "df": null,
+          "effect_size_dz": null,
+          "p_bonferroni": null
+        },
+        "per_seed": [
+          {
+            "seed": 6776679,
+            "n_pairs": 74,
+            "acc": 0.7567567567567568,
+            "mcc": 0.5015218542338612,
+            "auroc": 0.7957589285714286,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          },
+          {
+            "seed": 6783446,
+            "n_pairs": 74,
+            "acc": 0.7432432432432432,
+            "mcc": 0.4726824120408972,
+            "auroc": 0.7834821428571429,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          },
+          {
+            "seed": 6790213,
+            "n_pairs": 74,
+            "acc": 0.6756756756756757,
+            "mcc": 0.33484842363518275,
+            "auroc": 0.7976190476190477,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          },
+          {
+            "seed": 6796980,
+            "n_pairs": 74,
+            "acc": 0.7297297297297297,
+            "mcc": 0.44386947675277605,
+            "auroc": 0.7924107142857143,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          },
+          {
+            "seed": 6803747,
+            "n_pairs": 74,
+            "acc": 0.7702702702702703,
+            "mcc": 0.5285586077134634,
+            "auroc": 0.8035714285714286,
+            "acc_delta_vs_baseline": null,
+            "mcc_delta_vs_baseline": null,
+            "auroc_delta_vs_baseline": null
+          }
+        ]
+      }
+    }
+  },
+  "t_tests": {
+    "overall": {
+      "baseline_pairs": 257,
+      "signed_delta": {
+        "description": "H0: mean(perturbed - baseline) = 0 (no directional bias)",
+        "n": 257,
+        "mean": 0.008342900460236672,
+        "std": 0.12415837355480382,
+        "t": 1.0772279393228459,
+        "p": 0.2823924987945243,
+        "df": 256,
+        "p_bonferroni": 1.0
+      },
+      "abs_delta": {
+        "description": "H0: mean|perturbed - baseline| = 0 (no perturbation impact)",
+        "n": 257,
+        "mean": 0.057259564547998805,
+        "std": 0.12550215612852664,
+        "t": 7.314142469404554,
+        "p": 3.3234874433013316e-12,
+        "df": 256,
+        "p_bonferroni": 3.988184931961598e-11
+      },
+      "perturbation_std": {
+        "description": "H0: mean(std of P(y=1) across conformers) = 0 (no variability)",
+        "n": 257,
+        "mean": 0.04554153039429254,
+        "std": 0.0948254989906394,
+        "t": 7.699261061586798,
+        "p": 2.9862131012843334e-13,
+        "df": 256,
+        "p_bonferroni": 3.5834557215412e-12
+      },
+      "flip_rate": {
+        "description": "Fraction of perturbed conformers that changed the binary prediction",
+        "n": 257,
+        "mean": 0.05252918287937743,
+        "std": 0.1702004336704091
+      }
+    },
+    "per_bin": {
+      "<=3": {
+        "baseline_pairs": 91,
+        "signed_delta": {
+          "description": "H0: mean(perturbed - baseline) = 0 (no directional bias)",
+          "n": 91,
+          "mean": 0.007993948721776271,
+          "std": 0.07122710332924466,
+          "t": 1.070623499115156,
+          "p": 0.28720154665001724,
+          "df": 90,
+          "p_bonferroni": 1.0
+        },
+        "abs_delta": {
+          "description": "H0: mean|perturbed - baseline| = 0 (no perturbation impact)",
+          "n": 91,
+          "mean": 0.026062807193715145,
+          "std": 0.07101326076193719,
+          "t": 3.5010832081636445,
+          "p": 0.0007231862343181368,
+          "df": 90,
+          "p_bonferroni": 0.008678234811817643
+        },
+        "perturbation_std": {
+          "description": "H0: mean(std of P(y=1) across conformers) = 0 (no variability)",
+          "n": 91,
+          "mean": 0.020242351674051785,
+          "std": 0.05578854154808243,
+          "t": 3.461279369367142,
+          "p": 0.0008242682658939553,
+          "df": 90,
+          "p_bonferroni": 0.009891219190727463
+        },
+        "flip_rate": {
+          "description": "Fraction of perturbed conformers that changed the binary prediction",
+          "n": 91,
+          "mean": 0.016483516483516484,
+          "std": 0.0971982353106112
+        }
+      },
+      "4-8": {
+        "baseline_pairs": 92,
+        "signed_delta": {
+          "description": "H0: mean(perturbed - baseline) = 0 (no directional bias)",
+          "n": 92,
+          "mean": 0.026971471391158103,
+          "std": 0.13728625811396872,
+          "t": 1.8843930121609442,
+          "p": 0.06270395676239136,
+          "df": 91,
+          "p_bonferroni": 0.7524474811486963
+        },
+        "abs_delta": {
+          "description": "H0: mean|perturbed - baseline| = 0 (no perturbation impact)",
+          "n": 92,
+          "mean": 0.06503050243083024,
+          "std": 0.1359895868534309,
+          "t": 4.586753158839702,
+          "p": 1.4332203595409984e-05,
+          "df": 91,
+          "p_bonferroni": 0.0001719864431449198
+        },
+        "perturbation_std": {
+          "description": "H0: mean(std of P(y=1) across conformers) = 0 (no variability)",
+          "n": 92,
+          "mean": 0.05148884299613653,
+          "std": 0.10258070094281048,
+          "t": 4.814391285499935,
+          "p": 5.848610609659802e-06,
+          "df": 91,
+          "p_bonferroni": 7.018332731591763e-05
+        },
+        "flip_rate": {
+          "description": "Fraction of perturbed conformers that changed the binary prediction",
+          "n": 92,
+          "mean": 0.06521739130434782,
+          "std": 0.18850760477194597
+        }
+      },
+      ">=9": {
+        "baseline_pairs": 74,
+        "signed_delta": {
+          "description": "H0: mean(perturbed - baseline) = 0 (no directional bias)",
+          "n": 74,
+          "mean": -0.014387828153883259,
+          "std": 0.1528014281028111,
+          "t": -0.8099975190201788,
+          "p": 0.4205741996417681,
+          "df": 73,
+          "p_bonferroni": 1.0
+        },
+        "abs_delta": {
+          "description": "H0: mean|perturbed - baseline| = 0 (no perturbation impact)",
+          "n": 74,
+          "mean": 0.08596197852123288,
+          "std": 0.15440478751106887,
+          "t": 4.7891837536784045,
+          "p": 8.542775656487428e-06,
+          "df": 73,
+          "p_bonferroni": 0.00010251330787784914
+        },
+        "perturbation_std": {
+          "description": "H0: mean(std of P(y=1) across conformers) = 0 (no variability)",
+          "n": 74,
+          "mean": 0.06925872639662038,
+          "std": 0.11474264407242869,
+          "t": 5.192368511821665,
+          "p": 1.8045191717628786e-06,
+          "df": 73,
+          "p_bonferroni": 2.165423006115454e-05
+        },
+        "flip_rate": {
+          "description": "Fraction of perturbed conformers that changed the binary prediction",
+          "n": 74,
+          "mean": 0.08108108108108109,
+          "std": 0.2073483441013093
+        }
+      }
+    }
+  },
+  "per_pair": [
+    {
+      "drug_id": "DB03010",
+      "uniprot_id": "P28720",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        5.2013380269499976e-08,
+        2.5757416199923e-09,
+        8.48517167639784e-09,
+        1.809469796221208e-09,
+        1.3064781478888676e-09
+      ]
+    },
+    {
+      "drug_id": "DB03010",
+      "uniprot_id": "Q9NY65",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999716281890869,
+        0.9999686479568481,
+        0.9999791383743286,
+        0.9999898672103882,
+        0.9999915361404419
+      ]
+    },
+    {
+      "drug_id": "DB03010",
+      "uniprot_id": "Q71U36",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999967813491821,
+        0.9999914169311523,
+        0.9999963045120239,
+        0.9999947547912598,
+        0.9999927282333374
+      ]
+    },
+    {
+      "drug_id": "DB03010",
+      "uniprot_id": "P68363",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999897480010986,
+        0.9999942779541016,
+        0.999998927116394,
+        0.9999966621398926,
+        0.9999938011169434
+      ]
+    },
+    {
+      "drug_id": "DB03010",
+      "uniprot_id": "Q9BQE3",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999916553497314,
+        0.9999854564666748,
+        0.9999938011169434,
+        0.9999935626983643,
+        0.9999948740005493
+      ]
+    },
+    {
+      "drug_id": "DB03010",
+      "uniprot_id": "P24557",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.7992266293731518e-05,
+        1.1134352462249808e-05,
+        7.351017302426044e-06,
+        4.444097498890187e-07,
+        1.7549186850374099e-06
+      ]
+    },
+    {
+      "drug_id": "DB03010",
+      "uniprot_id": "P68366",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999909400939941,
+        0.9999408721923828,
+        0.9999741315841675,
+        0.9999855756759644,
+        0.9999945163726807
+      ]
+    },
+    {
+      "drug_id": "DB01933",
+      "uniprot_id": "O15530",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.979971170425415,
+        0.9965797066688538,
+        0.9981420040130615,
+        0.734359860420227,
+        0.9930483102798462
+      ]
+    },
+    {
+      "drug_id": "DB01933",
+      "uniprot_id": "P03276",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0015832461649551988,
+        8.238048758357763e-05,
+        0.000542081834282726,
+        5.403498653322458e-05,
+        0.00018790092144627124
+      ]
+    },
+    {
+      "drug_id": "DB01094",
+      "uniprot_id": "P39019",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0005768596311099827,
+        0.00017289731476921588,
+        0.00012178886390756816,
+        0.002930481219664216,
+        0.0006251698941923678
+      ]
+    },
+    {
+      "drug_id": "DB01094",
+      "uniprot_id": "O75908",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.032712604850530624,
+        0.051135189831256866,
+        0.00778586370870471,
+        0.09630919992923737,
+        0.030259395018219948
+      ]
+    },
+    {
+      "drug_id": "DB02816",
+      "uniprot_id": "P05364",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999771118164062,
+        0.9999996423721313,
+        0.9999443292617798,
+        0.9999998807907104,
+        0.9999939203262329
+      ]
+    },
+    {
+      "drug_id": "DB02655",
+      "uniprot_id": "P06608",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9997041821479797,
+        0.9999643564224243,
+        0.9999351501464844,
+        0.9999983310699463,
+        0.9999984502792358
+      ]
+    },
+    {
+      "drug_id": "DB04942",
+      "uniprot_id": "P10276",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.8599576354026794,
+        0.8548922538757324,
+        0.8835556507110596,
+        0.9776246547698975,
+        0.9688254594802856
+      ]
+    },
+    {
+      "drug_id": "DB04942",
+      "uniprot_id": "Q9Y463",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.7623530030250549,
+        0.823728084564209,
+        0.5764176845550537,
+        0.8850032091140747,
+        0.5043758749961853
+      ]
+    },
+    {
+      "drug_id": "DB04942",
+      "uniprot_id": "Q99928",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.011872653849422932,
+        0.011257719248533249,
+        0.07514011114835739,
+        0.09405875205993652,
+        0.11041225492954254
+      ]
+    },
+    {
+      "drug_id": "DB01452",
+      "uniprot_id": "P69905",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9743492007255554,
+        0.9910278916358948,
+        0.9740885496139526,
+        0.9727686047554016,
+        0.9968570470809937
+      ]
+    },
+    {
+      "drug_id": "DB01452",
+      "uniprot_id": "P41143",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "drug_id": "DB01452",
+      "uniprot_id": "O14764",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        0.9999992847442627,
+        1.0,
+        1.0,
+        0.9999998807907104
+      ]
+    },
+    {
+      "drug_id": "DB08265",
+      "uniprot_id": "O00141",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.025450920686125755,
+        0.19306497275829315,
+        0.16325758397579193,
+        0.3624824583530426,
+        0.38078954815864563
+      ]
+    },
+    {
+      "drug_id": "DB08265",
+      "uniprot_id": "P94548",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.3162541389465332,
+        0.4041244387626648,
+        0.38769587874412537,
+        0.38921940326690674,
+        0.427336186170578
+      ]
+    },
+    {
+      "drug_id": "DB08265",
+      "uniprot_id": "P0AEK4",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9860895872116089,
+        0.9820716977119446,
+        0.9823662638664246,
+        0.8721431493759155,
+        0.8957288265228271
+      ]
+    },
+    {
+      "drug_id": "DB01055",
+      "uniprot_id": "P13500",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        5.844372097385531e-09,
+        1.3495895956339155e-08,
+        5.011723303027793e-08,
+        3.0866733169432337e-08,
+        6.077309766538974e-10
+      ]
+    },
+    {
+      "drug_id": "DB01055",
+      "uniprot_id": "Q8IKH8",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "probs": [
+        0.07979114353656769,
+        0.2702110707759857,
+        0.8571487665176392,
+        0.0028443452902138233,
+        0.052679792046546936
+      ]
+    },
+    {
+      "drug_id": "DB01055",
+      "uniprot_id": "P00947",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        8.384671429384483e-12,
+        9.061402739263258e-10,
+        3.785341831652467e-12,
+        1.0531433364269205e-10,
+        7.316010575131315e-10
+      ]
+    },
+    {
+      "drug_id": "DB00321",
+      "uniprot_id": "Q99584",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.999955415725708,
+        0.9998025298118591,
+        0.9894311428070068,
+        0.9999357461929321,
+        0.9998868703842163
+      ]
+    },
+    {
+      "drug_id": "DB00321",
+      "uniprot_id": "P08912",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        1.0,
+        0.9999991655349731,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "drug_id": "DB01577",
+      "uniprot_id": "P31645",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        1.0,
+        0.9999996423721313,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "drug_id": "DB01577",
+      "uniprot_id": "P12268",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        3.25499931932427e-05,
+        1.6865483303263318e-06,
+        4.823829385713907e-06,
+        0.0001040540446410887,
+        1.2657204024435487e-05
+      ]
+    },
+    {
+      "drug_id": "DB01577",
+      "uniprot_id": "P18089",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "drug_id": "DB01577",
+      "uniprot_id": "P07948",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0007016328163444996,
+        2.7313777906101677e-08,
+        5.4635815871506566e-08,
+        5.039265306550078e-05,
+        3.0015316951903515e-05
+      ]
+    },
+    {
+      "drug_id": "DB01577",
+      "uniprot_id": "K7YNB3",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0002040485996985808,
+        3.2484313123859465e-05,
+        0.0002052145719062537,
+        0.00018415538943372667,
+        1.3754536666965578e-05
+      ]
+    },
+    {
+      "drug_id": "DB01577",
+      "uniprot_id": "Q14181",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.01449698954820633,
+        3.210734575986862e-05,
+        1.1542731954250485e-05,
+        0.007758659310638905,
+        9.285327541874722e-05
+      ]
+    },
+    {
+      "drug_id": "DB01577",
+      "uniprot_id": "Q01959",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        0.9999998807907104,
+        0.9999995231628418,
+        1.0,
+        0.9999998807907104
+      ]
+    },
+    {
+      "drug_id": "DB03350",
+      "uniprot_id": "O24990",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 0,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0002737717586569488,
+        0.0002091124333674088,
+        0.0002496863016858697,
+        0.00014937561354599893,
+        8.29812852316536e-05
+      ]
+    },
+    {
+      "drug_id": "DB03350",
+      "uniprot_id": "P02930",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 0,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        7.5045709309051745e-06,
+        6.123933872004272e-06,
+        3.723988811543677e-06,
+        5.5517657528980635e-06,
+        6.742949153704103e-06
+      ]
+    },
+    {
+      "drug_id": "DB08020",
+      "uniprot_id": "P03372",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999986886978149,
+        0.9999971389770508,
+        0.9999990463256836,
+        0.9999978542327881,
+        0.9999938011169434
+      ]
+    },
+    {
+      "drug_id": "DB08020",
+      "uniprot_id": "P56181",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0006387282628566027,
+        5.413081089500338e-05,
+        0.0003089606761932373,
+        4.900770727545023e-05,
+        0.0001292266242671758
+      ]
+    },
+    {
+      "drug_id": "DB08020",
+      "uniprot_id": "P0A079",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.6618824922053363e-09,
+        8.440958154665168e-09,
+        5.770075617306247e-08,
+        8.338784773798125e-09,
+        6.17755135934317e-09
+      ]
+    },
+    {
+      "drug_id": "DB00475",
+      "uniprot_id": "P48169",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999920129776001,
+        0.9999898672103882,
+        0.9999797344207764,
+        0.999987006187439,
+        0.9999918937683105
+      ]
+    },
+    {
+      "drug_id": "DB00475",
+      "uniprot_id": "P47870",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999992847442627,
+        0.9999991655349731,
+        0.9999974966049194,
+        0.9999985694885254,
+        0.9999992847442627
+      ]
+    },
+    {
+      "drug_id": "DB00475",
+      "uniprot_id": "Q02750",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.000531804864294827,
+        0.0003120916662737727,
+        0.0012330893659964204,
+        0.00035272291279397905,
+        0.0005832431488670409
+      ]
+    },
+    {
+      "drug_id": "DB00897",
+      "uniprot_id": "P18507",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999996423721313,
+        0.9999996423721313,
+        0.9999996423721313,
+        0.9999997615814209,
+        0.9999997615814209
+      ]
+    },
+    {
+      "drug_id": "DB00897",
+      "uniprot_id": "Q9NZK7",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9093770980834961,
+        0.9550036787986755,
+        0.962759792804718,
+        0.9993366599082947,
+        0.9995132684707642
+      ]
+    },
+    {
+      "drug_id": "DB00897",
+      "uniprot_id": "P18507",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999996423721313,
+        0.9999996423721313,
+        0.9999996423721313,
+        0.9999997615814209,
+        0.9999997615814209
+      ]
+    },
+    {
+      "drug_id": "DB00897",
+      "uniprot_id": "O00591",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        0.9999998807907104,
+        0.9999998807907104,
+        0.9999998807907104,
+        0.9999998807907104
+      ]
+    },
+    {
+      "drug_id": "DB00897",
+      "uniprot_id": "O00591",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        0.9999998807907104,
+        0.9999998807907104,
+        0.9999998807907104,
+        0.9999998807907104
+      ]
+    },
+    {
+      "drug_id": "DB03127",
+      "uniprot_id": "P07477",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999949932098389,
+        0.9999949932098389,
+        0.9999957084655762,
+        0.9999966621398926,
+        0.9999932050704956
+      ]
+    },
+    {
+      "drug_id": "DB03127",
+      "uniprot_id": "P18669",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.4665316641330719,
+        0.46652013063430786,
+        0.4614916741847992,
+        0.4430277645587921,
+        0.47724542021751404
+      ]
+    },
+    {
+      "drug_id": "DB03127",
+      "uniprot_id": "P00811",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9987326264381409,
+        0.9987326264381409,
+        0.9984577894210815,
+        0.9987941980361938,
+        0.9984925985336304
+      ]
+    },
+    {
+      "drug_id": "DB03127",
+      "uniprot_id": "P07478",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9998205304145813,
+        0.9998205304145813,
+        0.9998470544815063,
+        0.9998867511749268,
+        0.999769389629364
+      ]
+    },
+    {
+      "drug_id": "DB03127",
+      "uniprot_id": "P06870",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.03231099992990494,
+        0.03231470286846161,
+        0.0409589447081089,
+        0.041868556290864944,
+        0.023686204105615616
+      ]
+    },
+    {
+      "drug_id": "DB13953",
+      "uniprot_id": "P62508",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.8356204032897949,
+        0.8502185344696045,
+        0.8729833364486694,
+        0.9411073923110962,
+        0.8164364099502563
+      ]
+    },
+    {
+      "drug_id": "DB01239",
+      "uniprot_id": "Q10588",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.3817463556952134e-07,
+        9.196613603990045e-08,
+        2.798061177600175e-05,
+        4.976829586667009e-06,
+        2.45851042564027e-05
+      ]
+    },
+    {
+      "drug_id": "DB01239",
+      "uniprot_id": "P04190",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.1763810370268857e-08,
+        2.727983172690074e-08,
+        3.744275645090056e-08,
+        1.1522225840110423e-08,
+        3.6048962925860906e-08
+      ]
+    },
+    {
+      "drug_id": "DB01239",
+      "uniprot_id": "P14416",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999995231628418,
+        0.9999949932098389,
+        0.9999994039535522,
+        0.999998927116394,
+        0.9999994039535522
+      ]
+    },
+    {
+      "drug_id": "DB01239",
+      "uniprot_id": "P41595",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999775886535645,
+        0.9997988343238831,
+        0.9999775886535645,
+        0.9999687671661377,
+        0.9999785423278809
+      ]
+    },
+    {
+      "drug_id": "DB00643",
+      "uniprot_id": "Q71U36",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        8.661463368753175e-08,
+        0.0003109814424533397,
+        7.10534564518639e-08,
+        4.4513424768410914e-07,
+        0.00025928227114491165
+      ]
+    },
+    {
+      "drug_id": "DB03297",
+      "uniprot_id": "P23946",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        0.9999998807907104,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "drug_id": "DB03297",
+      "uniprot_id": "O07015",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999986886978149,
+        0.9999970197677612,
+        0.9999998807907104,
+        0.9999996423721313,
+        0.9999998807907104
+      ]
+    },
+    {
+      "drug_id": "DB03297",
+      "uniprot_id": "Q9H2S1",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0029664142057299614,
+        0.0024082548916339874,
+        0.0012416635872796178,
+        6.345056317513809e-05,
+        0.0012416188837960362
+      ]
+    },
+    {
+      "drug_id": "DB00546",
+      "uniprot_id": "P18507",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.999997615814209,
+        0.9999998807907104,
+        0.9999997615814209,
+        0.9999995231628418,
+        0.9999997615814209
+      ]
+    },
+    {
+      "drug_id": "DB00546",
+      "uniprot_id": "O00591",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999992847442627,
+        0.9999998807907104,
+        0.9999991655349731,
+        0.9999991655349731,
+        0.9999992847442627
+      ]
+    },
+    {
+      "drug_id": "DB00546",
+      "uniprot_id": "P19099",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.011340881697833538,
+        0.03759953752160072,
+        0.015740005299448967,
+        0.07554301619529724,
+        0.021361330524086952
+      ]
+    },
+    {
+      "drug_id": "DB00546",
+      "uniprot_id": "Q9UK17",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9997474551200867,
+        0.9998674392700195,
+        0.9976024031639099,
+        0.9990354776382446,
+        0.9968327879905701
+      ]
+    },
+    {
+      "drug_id": "DB03661",
+      "uniprot_id": "P96113",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.990395724773407,
+        0.9998722076416016,
+        0.9991403818130493,
+        0.9731491804122925,
+        0.9963911175727844
+      ]
+    },
+    {
+      "drug_id": "DB03661",
+      "uniprot_id": "P07451",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        1,
+        1,
+        0
+      ],
+      "probs": [
+        0.10811758786439896,
+        0.3382640779018402,
+        0.9645123481750488,
+        0.9784154295921326,
+        0.2534855306148529
+      ]
+    },
+    {
+      "drug_id": "DB00184",
+      "uniprot_id": "P10606",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.4368071535718627e-05,
+        0.000268888077698648,
+        0.0002954645606223494,
+        0.00030062836594879627,
+        0.00027629220858216286
+      ]
+    },
+    {
+      "drug_id": "DB00184",
+      "uniprot_id": "P00132",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.23799729347229004,
+        0.06354399025440216,
+        0.09417460113763809,
+        0.09070711582899094,
+        0.09379839152097702
+      ]
+    },
+    {
+      "drug_id": "DB00184",
+      "uniprot_id": "P0A3M5",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        5.381755041611314e-10,
+        7.001361157499275e-10,
+        7.578395688767614e-10,
+        7.456038009223676e-10,
+        8.582174970683809e-10
+      ]
+    },
+    {
+      "drug_id": "DB00184",
+      "uniprot_id": "Q9GZZ6",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9988954067230225,
+        0.9914637207984924,
+        0.9919874668121338,
+        0.992159903049469,
+        0.9922757744789124
+      ]
+    },
+    {
+      "drug_id": "DB00233",
+      "uniprot_id": "P35354",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "drug_id": "DB00233",
+      "uniprot_id": "P62508",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        4.343684850027785e-05,
+        0.030755072832107544,
+        0.032570865005254745,
+        0.03257416933774948,
+        7.980682858033106e-05
+      ]
+    },
+    {
+      "drug_id": "DB00233",
+      "uniprot_id": "Q03181",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.619613431103062e-05,
+        6.191382999531925e-05,
+        0.00020125671289861202,
+        0.0002012797340285033,
+        0.00017949577886611223
+      ]
+    },
+    {
+      "drug_id": "DB00368",
+      "uniprot_id": "P18825",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "drug_id": "DB00368",
+      "uniprot_id": "P98052",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.06673385947942734,
+        0.001537651289254427,
+        0.0005142040899954736,
+        0.06066719815135002,
+        0.0006085869972594082
+      ]
+    },
+    {
+      "drug_id": "DB00849",
+      "uniprot_id": "P06632",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.06927430629730225,
+        0.08060726523399353,
+        0.02307448908686638,
+        0.018146490678191185,
+        0.04245710372924805
+      ]
+    },
+    {
+      "drug_id": "DB00849",
+      "uniprot_id": "P31644",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999868869781494,
+        0.9998635053634644,
+        0.9987257122993469,
+        0.9981491565704346,
+        0.9998020529747009
+      ]
+    },
+    {
+      "drug_id": "DB01536",
+      "uniprot_id": "Q9BYV1",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 0,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.08289425820112228,
+        0.025789868086576462,
+        0.025447171181440353,
+        0.026392439380288124,
+        0.11297684907913208
+      ]
+    },
+    {
+      "drug_id": "DB01536",
+      "uniprot_id": "P63316",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 0,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9864887595176697,
+        0.9925318360328674,
+        0.9927449226379395,
+        0.9931043982505798,
+        0.9808032512664795
+      ]
+    },
+    {
+      "drug_id": "DB01536",
+      "uniprot_id": "Q64822",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 0,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.2025553286075592,
+        0.11051925271749496,
+        0.11083567142486572,
+        0.11054278910160065,
+        0.19692924618721008
+      ]
+    },
+    {
+      "drug_id": "DB01536",
+      "uniprot_id": "P42330",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 0,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999864101409912,
+        0.9999909400939941,
+        0.9999910593032837,
+        0.9999912977218628,
+        0.999990701675415
+      ]
+    },
+    {
+      "drug_id": "DB02789",
+      "uniprot_id": "O00204",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.019975749775767326,
+        0.01775374263525009,
+        0.004066965077072382,
+        0.021057095378637314,
+        0.0009032341185957193
+      ]
+    },
+    {
+      "drug_id": "DB02789",
+      "uniprot_id": "Q54527",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.02724773809313774,
+        0.028601795434951782,
+        0.004898468963801861,
+        0.0424850657582283,
+        0.0001344505144516006
+      ]
+    },
+    {
+      "drug_id": "DB02789",
+      "uniprot_id": "Q6ZMR3",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 1,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.01754552125930786,
+        0.01623108610510826,
+        0.024465398862957954,
+        0.011169711127877235,
+        0.00223146821372211
+      ]
+    },
+    {
+      "drug_id": "DB04163",
+      "uniprot_id": "Q86XF0",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.0903741021195401e-08,
+        1.7225467274784023e-08,
+        7.0637656790495384e-06,
+        4.6318429980374276e-08,
+        1.7001807961491977e-08
+      ]
+    },
+    {
+      "drug_id": "DB04163",
+      "uniprot_id": "P51170",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 2,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0006737809744663537,
+        0.0010672274511307478,
+        0.0003605822566896677,
+        0.00025567616103217006,
+        0.0010845671640709043
+      ]
+    },
+    {
+      "drug_id": "DB07445",
+      "uniprot_id": "P35557",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        0,
+        1,
+        0,
+        0
+      ],
+      "probs": [
+        0.5075764656066895,
+        0.32603782415390015,
+        0.5075193643569946,
+        0.331082284450531,
+        0.4605097472667694
+      ]
+    },
+    {
+      "drug_id": "DB07445",
+      "uniprot_id": "O25928",
+      "label": 1,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9045145511627197,
+        0.8288924694061279,
+        0.904488205909729,
+        0.9203131198883057,
+        0.845142126083374
+      ]
+    },
+    {
+      "drug_id": "DB07445",
+      "uniprot_id": "P0A2K1",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.021631533280014992,
+        0.011423878371715546,
+        0.021643616259098053,
+        0.11420903354883194,
+        0.070101298391819
+      ]
+    },
+    {
+      "drug_id": "DB07445",
+      "uniprot_id": "Q494W8",
+      "label": 0,
+      "bin": "<=3",
+      "n_rot": 3,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        7.877756086349663e-11,
+        2.7549840186935626e-09,
+        7.879949470712688e-11,
+        2.557602463149067e-10,
+        8.98813870553461e-11
+      ]
+    },
+    {
+      "drug_id": "DB03925",
+      "uniprot_id": "P04190",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.1520312455104431e-06,
+        4.25632364908779e-08,
+        9.304715717917134e-07,
+        3.4389959324698793e-08,
+        3.000586801249483e-08
+      ]
+    },
+    {
+      "drug_id": "DB03925",
+      "uniprot_id": "P08246",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "probs": [
+        0.007119162939488888,
+        0.15994861721992493,
+        0.951187252998352,
+        0.11749424785375595,
+        0.09419142454862595
+      ]
+    },
+    {
+      "drug_id": "DB00427",
+      "uniprot_id": "P06608",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.662500497851994e-10,
+        7.356842357530979e-10,
+        5.503822952945825e-10,
+        6.213068948213163e-10,
+        2.8447563749089966e-10
+      ]
+    },
+    {
+      "drug_id": "DB00427",
+      "uniprot_id": "P35367",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999998807907104,
+        0.9999998807907104,
+        0.9999998807907104,
+        0.9999997615814209,
+        1.0
+      ]
+    },
+    {
+      "drug_id": "DB07932",
+      "uniprot_id": "P47869",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.01718764193356037,
+        0.18510611355304718,
+        0.05377180129289627,
+        0.10688691586256027,
+        0.09508232772350311
+      ]
+    },
+    {
+      "drug_id": "DB07932",
+      "uniprot_id": "P48169",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.02705073356628418,
+        0.22400182485580444,
+        0.06577976047992706,
+        0.16716118156909943,
+        0.15026608109474182
+      ]
+    },
+    {
+      "drug_id": "DB07932",
+      "uniprot_id": "P03372",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999998807907104,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "drug_id": "DB07932",
+      "uniprot_id": "O60656",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.2005696109772543e-07,
+        6.338934213090397e-07,
+        1.2542092520106962e-07,
+        1.3641215446114074e-07,
+        1.269595060193751e-07
+      ]
+    },
+    {
+      "drug_id": "DB02160",
+      "uniprot_id": "P07097",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0813702642917633,
+        0.05470141023397446,
+        0.10082992911338806,
+        0.14097332954406738,
+        0.22331750392913818
+      ]
+    },
+    {
+      "drug_id": "DB07401",
+      "uniprot_id": "O34002",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.5932087055480224e-07,
+        1.64935045177117e-07,
+        1.8879981666941603e-07,
+        1.6673748177709058e-06,
+        2.0498715969097248e-07
+      ]
+    },
+    {
+      "drug_id": "DB07401",
+      "uniprot_id": "P08574",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9976288676261902,
+        0.9994444251060486,
+        0.9953757524490356,
+        0.9999237060546875,
+        0.9926336407661438
+      ]
+    },
+    {
+      "drug_id": "DB07401",
+      "uniprot_id": "Q9UDW1",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        1,
+        1,
+        1,
+        0
+      ],
+      "probs": [
+        0.05992121249437332,
+        0.972018837928772,
+        0.8538852334022522,
+        0.9246110916137695,
+        0.46151813864707947
+      ]
+    },
+    {
+      "drug_id": "DB05814",
+      "uniprot_id": "O95264",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        1,
+        1,
+        0
+      ],
+      "probs": [
+        0.00020662920724134892,
+        0.05920880660414696,
+        0.7913811206817627,
+        0.701412558555603,
+        0.020024316385388374
+      ]
+    },
+    {
+      "drug_id": "DB05814",
+      "uniprot_id": "P77173",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0017200768925249577,
+        0.013252662494778633,
+        0.026942899450659752,
+        0.021305551752448082,
+        0.0012528199004009366
+      ]
+    },
+    {
+      "drug_id": "DB05814",
+      "uniprot_id": "P27338",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9388543367385864,
+        0.9740827679634094,
+        0.9993870258331299,
+        0.9983175992965698,
+        0.9971298575401306
+      ]
+    },
+    {
+      "drug_id": "DB05814",
+      "uniprot_id": "P0DP23",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "probs": [
+        0.00011366145190550014,
+        0.09904520213603973,
+        0.9187355637550354,
+        0.394381582736969,
+        0.04280342906713486
+      ]
+    },
+    {
+      "drug_id": "DB05814",
+      "uniprot_id": "P62942",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9393563270568848,
+        0.9933306574821472,
+        0.9950315952301025,
+        0.9940504431724548,
+        0.868667721748352
+      ]
+    },
+    {
+      "drug_id": "DB05814",
+      "uniprot_id": "P33260",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.4761196780455066e-06,
+        2.8652575565502048e-05,
+        7.52989508328028e-05,
+        4.47798856839654e-06,
+        2.8761605790350586e-06
+      ]
+    },
+    {
+      "drug_id": "DB00292",
+      "uniprot_id": "P0DJ06",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        8.212778084271122e-07,
+        1.042767325998284e-05,
+        7.023249054327607e-05,
+        5.5631870054639876e-05,
+        6.588723408640362e-06
+      ]
+    },
+    {
+      "drug_id": "DB00292",
+      "uniprot_id": "O00591",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.999872088432312,
+        0.8463796973228455,
+        0.9935230016708374,
+        0.9850969910621643,
+        0.9968923926353455
+      ]
+    },
+    {
+      "drug_id": "DB00292",
+      "uniprot_id": "P52699",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0024575896095484495,
+        0.0007511759758926928,
+        1.5028057532617822e-05,
+        1.6157530353666516e-06,
+        1.0750166438810993e-05
+      ]
+    },
+    {
+      "drug_id": "DB03247",
+      "uniprot_id": "O69755",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999879598617554,
+        0.9999830722808838,
+        0.9980515241622925,
+        0.9999994039535522,
+        0.9999126195907593
+      ]
+    },
+    {
+      "drug_id": "DB03247",
+      "uniprot_id": "O00141",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        0,
+        1,
+        1
+      ],
+      "probs": [
+        0.7412075996398926,
+        0.8986698985099792,
+        0.18743422627449036,
+        0.9991783499717712,
+        0.936829149723053
+      ]
+    },
+    {
+      "drug_id": "DB03247",
+      "uniprot_id": "Q9UJM8",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.8982784152030945,
+        0.9932482242584229,
+        0.9912978410720825,
+        0.9998998641967773,
+        0.8363780975341797
+      ]
+    },
+    {
+      "drug_id": "DB03247",
+      "uniprot_id": "Q51990",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.8182788491249084,
+        0.999751627445221,
+        0.9936469197273254,
+        0.9999849796295166,
+        0.9974222183227539
+      ]
+    },
+    {
+      "drug_id": "DB03247",
+      "uniprot_id": "P30197",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999988079071045,
+        0.9999997615814209,
+        0.9999750852584839,
+        1.0,
+        0.9999997615814209
+      ]
+    },
+    {
+      "drug_id": "DB03247",
+      "uniprot_id": "P08172",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.5641323924064636,
+        0.0001139503438025713,
+        0.42854180932044983,
+        5.419923127192305e-06,
+        9.23749539651908e-05
+      ]
+    },
+    {
+      "drug_id": "DB03247",
+      "uniprot_id": "P16435",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9863280057907104,
+        0.9865261912345886,
+        0.9496669769287109,
+        0.9965872764587402,
+        0.9848864674568176
+      ]
+    },
+    {
+      "drug_id": "DB13994",
+      "uniprot_id": "P47869",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9709053635597229,
+        0.9964582324028015,
+        0.9982675313949585,
+        0.9916302561759949,
+        0.9997840523719788
+      ]
+    },
+    {
+      "drug_id": "DB01207",
+      "uniprot_id": "P15531",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 8,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.6895799603844353e-07,
+        3.180420649062654e-10,
+        8.751213087521137e-09,
+        7.291380832441519e-10,
+        4.942693476728266e-10
+      ]
+    },
+    {
+      "drug_id": "DB01207",
+      "uniprot_id": "Q9RME2",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 8,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        3.334639586682897e-07,
+        1.3355465178221948e-08,
+        7.601565243930963e-08,
+        3.8210682618000646e-08,
+        1.1057148974202846e-08
+      ]
+    },
+    {
+      "drug_id": "DB01207",
+      "uniprot_id": "P21731",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 8,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        0,
+        1,
+        0,
+        1
+      ],
+      "probs": [
+        0.9545992016792297,
+        0.2580271065235138,
+        0.9812707901000977,
+        0.4404737651348114,
+        0.9236997365951538
+      ]
+    },
+    {
+      "drug_id": "DB01207",
+      "uniprot_id": "P07445",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 8,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0020568573381751776,
+        0.0001354422274744138,
+        0.0009863059967756271,
+        0.00865920353680849,
+        0.0035258012358099222
+      ]
+    },
+    {
+      "drug_id": "DB01985",
+      "uniprot_id": "Q05581",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 6,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9998806715011597,
+        0.9960917830467224,
+        0.9843320846557617,
+        0.9987412095069885,
+        0.9994731545448303
+      ]
+    },
+    {
+      "drug_id": "DB01985",
+      "uniprot_id": "Q8ZKF6",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 6,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        0,
+        1,
+        1
+      ],
+      "probs": [
+        0.7634768486022949,
+        0.5773038864135742,
+        0.018174266442656517,
+        0.8591175675392151,
+        0.5580593943595886
+      ]
+    },
+    {
+      "drug_id": "DB12177",
+      "uniprot_id": "P28335",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999996423721313,
+        0.9999991655349731,
+        0.9999955892562866,
+        0.9999995231628418,
+        0.9999958276748657
+      ]
+    },
+    {
+      "drug_id": "DB12177",
+      "uniprot_id": "A5X5Y0",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        1,
+        0,
+        1,
+        1
+      ],
+      "probs": [
+        0.34321945905685425,
+        0.9069845080375671,
+        0.2147461473941803,
+        0.6853305101394653,
+        0.8024942278862
+      ]
+    },
+    {
+      "drug_id": "DB01353",
+      "uniprot_id": "P14867",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999988079071045,
+        0.999998927116394,
+        0.9999997615814209,
+        0.9999997615814209,
+        0.9999997615814209
+      ]
+    },
+    {
+      "drug_id": "DB01876",
+      "uniprot_id": "P07477",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        1.0,
+        1.0,
+        0.9999997615814209,
+        0.9999998807907104
+      ]
+    },
+    {
+      "drug_id": "DB01876",
+      "uniprot_id": "P05062",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.028377674520015717,
+        0.15447640419006348,
+        8.762974903220311e-05,
+        6.402769940905273e-05,
+        0.003887324593961239
+      ]
+    },
+    {
+      "drug_id": "DB01876",
+      "uniprot_id": "P53778",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9968744516372681,
+        0.9978576302528381,
+        0.9999021291732788,
+        0.9952760934829712,
+        0.997787356376648
+      ]
+    },
+    {
+      "drug_id": "DB09286",
+      "uniprot_id": "P14868",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.1910404218440362e-08,
+        7.774320742726104e-09,
+        4.444688617155634e-09,
+        8.666602013818192e-08,
+        6.631720594896251e-08
+      ]
+    },
+    {
+      "drug_id": "DB09286",
+      "uniprot_id": "P28223",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999973773956299,
+        0.9998770952224731,
+        0.9999641180038452,
+        0.9999703168869019,
+        0.9998370409011841
+      ]
+    },
+    {
+      "drug_id": "DB09286",
+      "uniprot_id": "P21917",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999986886978149,
+        0.9999885559082031,
+        0.9999922513961792,
+        0.9999997615814209,
+        0.9999997615814209
+      ]
+    },
+    {
+      "drug_id": "DB09286",
+      "uniprot_id": "O00141",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0015087516512721777,
+        3.192729127476923e-05,
+        0.000977500225417316,
+        3.107670636381954e-05,
+        1.058587940860889e-06
+      ]
+    },
+    {
+      "drug_id": "DB09286",
+      "uniprot_id": "P43088",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 7,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.00010130094597116113,
+        0.00021982003818266094,
+        1.4988652765168808e-05,
+        0.0002125913742929697,
+        0.00039982781163416803
+      ]
+    },
+    {
+      "drug_id": "DB03721",
+      "uniprot_id": "P01556",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9993065595626831,
+        0.9993727803230286,
+        0.9993187189102173,
+        0.9999189376831055,
+        0.9999018907546997
+      ]
+    },
+    {
+      "drug_id": "DB03721",
+      "uniprot_id": "P23415",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        6.07796346230316e-06,
+        4.2595261220412795e-06,
+        1.46590139138425e-06,
+        1.602748852747027e-05,
+        2.4906612452468835e-06
+      ]
+    },
+    {
+      "drug_id": "DB03721",
+      "uniprot_id": "O00519",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.827044070523698e-05,
+        0.00012393629003781825,
+        2.7451786081655882e-05,
+        0.0004977474454790354,
+        3.658119385363534e-05
+      ]
+    },
+    {
+      "drug_id": "DB03721",
+      "uniprot_id": "Q64822",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0007874268339946866,
+        0.006939308252185583,
+        0.0011048264568671584,
+        0.012262972071766853,
+        0.0024224582593888044
+      ]
+    },
+    {
+      "drug_id": "DB03721",
+      "uniprot_id": "Q64823",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        4.521596565609798e-05,
+        0.0005870279856026173,
+        0.00017790992569644004,
+        0.0006955679855309427,
+        0.00012921183952130377
+      ]
+    },
+    {
+      "drug_id": "DB06978",
+      "uniprot_id": "Q5G940",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.8696553111076355,
+        0.6741241216659546,
+        0.5488938689231873,
+        0.9476345777511597,
+        0.9755444526672363
+      ]
+    },
+    {
+      "drug_id": "DB06978",
+      "uniprot_id": "P36542",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.018061351031064987,
+        0.024333110079169273,
+        0.04663993790745735,
+        0.13234776258468628,
+        0.0903671458363533
+      ]
+    },
+    {
+      "drug_id": "DB06978",
+      "uniprot_id": "Q9UN88",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        8.48258963070947e-11,
+        2.665244136501599e-10,
+        1.0715970333308178e-09,
+        5.472994279998034e-10,
+        1.2686843242626367e-10
+      ]
+    },
+    {
+      "drug_id": "DB06978",
+      "uniprot_id": "Q8XJ01",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.00019333809905219823,
+        1.1994125998171512e-05,
+        0.00042281686910428107,
+        3.499890954117291e-05,
+        1.6421587133663706e-05
+      ]
+    },
+    {
+      "drug_id": "DB08215",
+      "uniprot_id": "P07173",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9845302104949951,
+        0.9984973669052124,
+        0.992495059967041,
+        0.9994693398475647,
+        0.9913358688354492
+      ]
+    },
+    {
+      "drug_id": "DB01403",
+      "uniprot_id": "P10276",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.040779579852824e-06,
+        5.882533287149272e-07,
+        4.903178705717437e-05,
+        8.160897095876862e-07,
+        3.45534244843293e-05
+      ]
+    },
+    {
+      "drug_id": "DB01403",
+      "uniprot_id": "P35348",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.999998927116394,
+        0.9999980926513672,
+        1.0,
+        0.9999997615814209,
+        0.9999998807907104
+      ]
+    },
+    {
+      "drug_id": "DB01403",
+      "uniprot_id": "Q70I53",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.5932067604372833e-09,
+        2.2732433990757528e-10,
+        1.082972644894653e-08,
+        2.5988962093492773e-09,
+        1.8324657347079665e-09
+      ]
+    },
+    {
+      "drug_id": "DB01403",
+      "uniprot_id": "P08912",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999971389770508,
+        0.9999903440475464,
+        1.0,
+        0.9999992847442627,
+        0.9999995231628418
+      ]
+    },
+    {
+      "drug_id": "DB01403",
+      "uniprot_id": "P9WKE1",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.2079137129704662e-10,
+        3.871254358744913e-11,
+        1.8945284230298398e-10,
+        1.1978146252644706e-10,
+        4.67822058869416e-10
+      ]
+    },
+    {
+      "drug_id": "DB02689",
+      "uniprot_id": "P10828",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 6,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.4578304217138793e-05,
+        4.4346396066430316e-07,
+        4.471185377497022e-08,
+        0.00026241588057018816,
+        1.4417968152713456e-08
+      ]
+    },
+    {
+      "drug_id": "DB02689",
+      "uniprot_id": "Q9UHQ9",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 6,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.000470651633804664,
+        1.9411104403843638e-06,
+        0.0003094482817687094,
+        0.0019570819567888975,
+        0.029506336897611618
+      ]
+    },
+    {
+      "drug_id": "DB02689",
+      "uniprot_id": "Q9NY72",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 6,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.6041207473449504e-08,
+        6.021768058417365e-06,
+        1.231118858413538e-06,
+        9.990658611513936e-08,
+        1.0715223197621526e-07
+      ]
+    },
+    {
+      "drug_id": "DB02689",
+      "uniprot_id": "P05089",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 6,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9996819496154785,
+        0.9994843006134033,
+        0.9995521903038025,
+        0.9984886646270752,
+        0.9999545812606812
+      ]
+    },
+    {
+      "drug_id": "DB00210",
+      "uniprot_id": "P10276",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9960945248603821,
+        0.9960368275642395,
+        0.9970499277114868,
+        0.9952332377433777,
+        0.9952548742294312
+      ]
+    },
+    {
+      "drug_id": "DB00210",
+      "uniprot_id": "P21918",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0002442882105242461,
+        0.0004212888015899807,
+        0.00043110098340548575,
+        0.000332879601046443,
+        0.0003365468292031437
+      ]
+    },
+    {
+      "drug_id": "DB00210",
+      "uniprot_id": "P35354",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999585151672363,
+        0.9999252557754517,
+        0.9999794960021973,
+        0.9999172687530518,
+        0.9999181032180786
+      ]
+    },
+    {
+      "drug_id": "DB00210",
+      "uniprot_id": "P20276",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.7635277888293786e-07,
+        1.514646612577053e-07,
+        2.4731738790251256e-07,
+        1.6276727876629593e-07,
+        1.6189289908652427e-07
+      ]
+    },
+    {
+      "drug_id": "DB07510",
+      "uniprot_id": "P47229",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        0,
+        1
+      ],
+      "probs": [
+        0.5002991557121277,
+        0.8181332349777222,
+        0.5761313438415527,
+        0.447323203086853,
+        0.9804306626319885
+      ]
+    },
+    {
+      "drug_id": "DB03787",
+      "uniprot_id": "P98052",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.00092613062588498,
+        0.0001786205975804478,
+        0.15746578574180603,
+        9.834444426815026e-06,
+        0.1383848488330841
+      ]
+    },
+    {
+      "drug_id": "DB03787",
+      "uniprot_id": "P16932",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.999518632888794,
+        0.9985962510108948,
+        0.9985180497169495,
+        0.9996992349624634,
+        0.999093770980835
+      ]
+    },
+    {
+      "drug_id": "DB03787",
+      "uniprot_id": "Q9NS18",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        4.680646088672802e-05,
+        0.00018101393652614206,
+        0.001170537667348981,
+        1.2159104699094314e-05,
+        0.013618270866572857
+      ]
+    },
+    {
+      "drug_id": "DB08340",
+      "uniprot_id": "P68400",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9998641014099121,
+        0.9997106194496155,
+        0.9867008328437805,
+        0.9557026028633118,
+        0.9985383749008179
+      ]
+    },
+    {
+      "drug_id": "DB08340",
+      "uniprot_id": "P15555",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.1585268111957703e-05,
+        1.0000139809562825e-05,
+        0.0008677113801240921,
+        0.0003812511858996004,
+        1.6400867025367916e-05
+      ]
+    },
+    {
+      "drug_id": "DB07939",
+      "uniprot_id": "P52700",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999921321868896,
+        0.9998030066490173,
+        0.9996033310890198,
+        0.9999985694885254,
+        0.9999923706054688
+      ]
+    },
+    {
+      "drug_id": "DB01643",
+      "uniprot_id": "Q15825",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.8669697171856967e-10,
+        1.9048949917443991e-10,
+        1.9515734805963803e-08,
+        3.2656271020670147e-09,
+        1.3267763554480894e-09
+      ]
+    },
+    {
+      "drug_id": "DB01643",
+      "uniprot_id": "P00183",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.1911085451288272e-08,
+        2.438156121442603e-09,
+        3.736361122719245e-07,
+        1.1605470717768185e-07,
+        1.2339959054585847e-09
+      ]
+    },
+    {
+      "drug_id": "DB01643",
+      "uniprot_id": "O94760",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        6.286879397521261e-06,
+        1.5677505871281028e-05,
+        0.00020360472262836993,
+        3.317158552818e-05,
+        0.009625962935388088
+      ]
+    },
+    {
+      "drug_id": "DB01643",
+      "uniprot_id": "Q9HU22",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 4,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9574858546257019,
+        0.9863275289535522,
+        0.9988597631454468,
+        0.9529030919075012,
+        0.9945629239082336
+      ]
+    },
+    {
+      "drug_id": "DB08289",
+      "uniprot_id": "O25928",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 8,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.05262472480535507,
+        0.004397382959723473,
+        0.003121546469628811,
+        0.0035434721503406763,
+        0.053909774869680405
+      ]
+    },
+    {
+      "drug_id": "DB08289",
+      "uniprot_id": "P01834",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 8,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "drug_id": "DB07967",
+      "uniprot_id": "P43235",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 8,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.37017616629600525,
+        0.19143004715442657,
+        0.7762558460235596,
+        0.9224017858505249,
+        0.7157874703407288
+      ]
+    },
+    {
+      "drug_id": "DB07967",
+      "uniprot_id": "P45452",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 8,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        8.901360537549863e-09,
+        1.3760923067707154e-08,
+        1.0809212653839495e-06,
+        2.1307457700459054e-06,
+        8.785651175458042e-07
+      ]
+    },
+    {
+      "drug_id": "DB07967",
+      "uniprot_id": "P36021",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 8,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        5.140433856354321e-09,
+        1.5787874119155276e-08,
+        1.5488392079987534e-07,
+        4.251690910450634e-08,
+        5.893997734318646e-09
+      ]
+    },
+    {
+      "drug_id": "DB07967",
+      "uniprot_id": "P23141",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 8,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        3.0036202414152058e-09,
+        9.254416966086865e-08,
+        1.748274192081567e-09,
+        3.9451411582014373e-10,
+        3.57512713877739e-10
+      ]
+    },
+    {
+      "drug_id": "DB06970",
+      "uniprot_id": "Q8DNV6",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 6,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.981494308911369e-11,
+        3.557114325314359e-11,
+        6.623747383915912e-11,
+        2.934765971907005e-11,
+        6.431845334109454e-11
+      ]
+    },
+    {
+      "drug_id": "DB06970",
+      "uniprot_id": "P28720",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 6,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        5.675111491854068e-10,
+        5.7349215154545163e-08,
+        2.9482325771823525e-06,
+        4.7533468716665084e-08,
+        7.611125170114974e-07
+      ]
+    },
+    {
+      "drug_id": "DB06970",
+      "uniprot_id": "P04190",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 6,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.903341581055429e-05,
+        7.663157362003403e-07,
+        2.3610286348230147e-07,
+        5.484781127051974e-07,
+        1.2351193618087564e-05
+      ]
+    },
+    {
+      "drug_id": "DB01150",
+      "uniprot_id": "P0A3M5",
+      "label": 1,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        0,
+        1
+      ],
+      "probs": [
+        0.9544543027877808,
+        0.9842745661735535,
+        0.921098530292511,
+        0.3709295094013214,
+        0.9968486428260803
+      ]
+    },
+    {
+      "drug_id": "DB01150",
+      "uniprot_id": "P25101",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "probs": [
+        0.052735112607479095,
+        0.49857378005981445,
+        0.4319898188114166,
+        0.028576958924531937,
+        0.7911145091056824
+      ]
+    },
+    {
+      "drug_id": "DB01150",
+      "uniprot_id": "Q8XJ01",
+      "label": 0,
+      "bin": "4-8",
+      "n_rot": 5,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999974966049194,
+        0.9999979734420776,
+        0.9999929666519165,
+        0.9999810457229614,
+        0.9999994039535522
+      ]
+    },
+    {
+      "drug_id": "DB04865",
+      "uniprot_id": "P20276",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.00011924783029826358,
+        0.0023920461535453796,
+        0.006658562459051609,
+        0.16073690354824066,
+        0.0007809018716216087
+      ]
+    },
+    {
+      "drug_id": "DB04865",
+      "uniprot_id": "P02763",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "probs": [
+        2.5510873911116505e-06,
+        0.04755515605211258,
+        0.7551497220993042,
+        0.045846447348594666,
+        0.0003588908293750137
+      ]
+    },
+    {
+      "drug_id": "DB04865",
+      "uniprot_id": "P30926",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "probs": [
+        2.162090822821483e-06,
+        0.21762827038764954,
+        0.5215411186218262,
+        0.012139640748500824,
+        0.00043945395736955106
+      ]
+    },
+    {
+      "drug_id": "DB01861",
+      "uniprot_id": "Q7Z4J2",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9985699653625488,
+        0.9998264908790588,
+        0.9992160797119141,
+        0.9982156753540039,
+        0.9993022680282593
+      ]
+    },
+    {
+      "drug_id": "DB01861",
+      "uniprot_id": "P29274",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        0,
+        0,
+        1,
+        0
+      ],
+      "probs": [
+        0.710594892501831,
+        0.35736751556396484,
+        0.4411250948905945,
+        0.9701238870620728,
+        0.07651947438716888
+      ]
+    },
+    {
+      "drug_id": "DB04099",
+      "uniprot_id": "P18843",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9775552749633789,
+        0.9789615273475647,
+        0.991061270236969,
+        0.7170131206512451,
+        0.9347432255744934
+      ]
+    },
+    {
+      "drug_id": "DB04099",
+      "uniprot_id": "P11309",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0034751342609524727,
+        0.0018997099250555038,
+        1.3705375749850646e-06,
+        3.2817133899243345e-08,
+        4.8988349590217695e-06
+      ]
+    },
+    {
+      "drug_id": "DB04099",
+      "uniprot_id": "O25096",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.008579358458518982,
+        0.012999162077903748,
+        0.05842815712094307,
+        3.114673381787725e-05,
+        0.0022185344714671373
+      ]
+    },
+    {
+      "drug_id": "DB04020",
+      "uniprot_id": "P56181",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 10,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        8.366108522750437e-05,
+        9.45044757827418e-06,
+        2.352168485231232e-05,
+        1.5195416381175164e-05,
+        1.422371860826388e-05
+      ]
+    },
+    {
+      "drug_id": "DB04020",
+      "uniprot_id": "Q92731",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 10,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.01108198519796133,
+        5.569678705796832e-06,
+        0.4314745366573334,
+        0.46394309401512146,
+        0.1776442527770996
+      ]
+    },
+    {
+      "drug_id": "DB04020",
+      "uniprot_id": "P37231",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 10,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.3424157202243805,
+        0.03348023444414139,
+        0.9794687032699585,
+        0.9732807874679565,
+        0.9792696833610535
+      ]
+    },
+    {
+      "drug_id": "DB09239",
+      "uniprot_id": "P49789",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 10,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        8.034245269072926e-08,
+        8.48883345838658e-08,
+        4.429235200831272e-09,
+        5.297035032825193e-10,
+        6.280749254017337e-09
+      ]
+    },
+    {
+      "drug_id": "DB09239",
+      "uniprot_id": "P35348",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 10,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9966679215431213,
+        0.9999994039535522,
+        0.9992555975914001,
+        0.9973365664482117,
+        0.9999735355377197
+      ]
+    },
+    {
+      "drug_id": "DB08964",
+      "uniprot_id": "P02930",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 12,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.04353281855583191,
+        0.02021103724837303,
+        0.0025941987987607718,
+        0.001846178318373859,
+        0.004539779853075743
+      ]
+    },
+    {
+      "drug_id": "DB08964",
+      "uniprot_id": "P43115",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 12,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999998807907104,
+        0.9999797344207764,
+        0.9982840418815613,
+        0.999872088432312,
+        0.9896508455276489
+      ]
+    },
+    {
+      "drug_id": "DB08964",
+      "uniprot_id": "P33260",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 12,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.40415841341018677,
+        0.2588008642196655,
+        0.018857702612876892,
+        0.38375023007392883,
+        0.18543794751167297
+      ]
+    },
+    {
+      "drug_id": "DB08964",
+      "uniprot_id": "P23219",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 12,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        0.9999992847442627,
+        0.9962440729141235,
+        0.99980229139328,
+        0.9999916553497314
+      ]
+    },
+    {
+      "drug_id": "DB08964",
+      "uniprot_id": "P08631",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 12,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.9993771022418514e-07,
+        9.036410508755921e-10,
+        5.214606524361898e-09,
+        9.662108890751142e-10,
+        3.185894854595972e-07
+      ]
+    },
+    {
+      "drug_id": "DB07054",
+      "uniprot_id": "Q8GR64",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.874043503187096e-10,
+        1.2876515409487865e-09,
+        3.7790262585879475e-10,
+        5.9090470294620445e-09,
+        3.521230806935449e-10
+      ]
+    },
+    {
+      "drug_id": "DB07054",
+      "uniprot_id": "O00204",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.497866358197598e-09,
+        2.56073718674088e-07,
+        1.4992142638448058e-08,
+        1.148702253317424e-07,
+        2.2539112798369842e-09
+      ]
+    },
+    {
+      "drug_id": "DB07054",
+      "uniprot_id": "P24941",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999996423721313,
+        0.999998927116394,
+        0.999998927116394,
+        0.9999998807907104,
+        0.9999918937683105
+      ]
+    },
+    {
+      "drug_id": "DB00154",
+      "uniprot_id": "P23219",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 15,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        1.0,
+        0.999937891960144,
+        1.0,
+        0.999997615814209,
+        0.9999997615814209
+      ]
+    },
+    {
+      "drug_id": "DB00154",
+      "uniprot_id": "Q16539",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 15,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.9396192385556787e-07,
+        3.602884680731222e-05,
+        1.4836265336271026e-06,
+        0.0009212211007252336,
+        8.525302837369964e-05
+      ]
+    },
+    {
+      "drug_id": "DB03264",
+      "uniprot_id": "P94548",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 29,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.045098656504706e-07,
+        1.9855271204960445e-07,
+        2.405830201723802e-08,
+        3.323559383261454e-07,
+        3.295827468718926e-07
+      ]
+    },
+    {
+      "drug_id": "DB04579",
+      "uniprot_id": "P07858",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 10,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.8969434499740601,
+        0.9973986148834229,
+        0.9999175071716309,
+        0.9975564479827881,
+        0.9999483823776245
+      ]
+    },
+    {
+      "drug_id": "DB04579",
+      "uniprot_id": "Q9UGM1",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 10,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        6.856147649614286e-08,
+        1.1300874902531177e-08,
+        9.988617648559739e-07,
+        6.832111765220361e-09,
+        4.092009930900531e-08
+      ]
+    },
+    {
+      "drug_id": "DB02784",
+      "uniprot_id": "P00800",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        1,
+        1,
+        1,
+        0
+      ],
+      "probs": [
+        0.3173959255218506,
+        0.7625499963760376,
+        0.9274864196777344,
+        0.7564073204994202,
+        0.27291741967201233
+      ]
+    },
+    {
+      "drug_id": "DB02784",
+      "uniprot_id": "P44868",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.2664198720813147e-06,
+        1.7215690604643896e-05,
+        2.640484808580368e-06,
+        1.2528536899480969e-05,
+        1.0634129466779996e-05
+      ]
+    },
+    {
+      "drug_id": "DB02784",
+      "uniprot_id": "P18031",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999998807907104,
+        0.9999842643737793,
+        0.9999997615814209,
+        0.9999879598617554,
+        0.9999996423721313
+      ]
+    },
+    {
+      "drug_id": "DB02784",
+      "uniprot_id": "P15121",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.4404086172580719,
+        0.0010538076749071479,
+        5.5091106332838535e-05,
+        0.00636805547401309,
+        0.002756372792646289
+      ]
+    },
+    {
+      "drug_id": "DB02784",
+      "uniprot_id": "Q8TD30",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        9.440333931243217e-11,
+        1.3691727751563576e-08,
+        3.0932136851902214e-09,
+        1.2234264712418508e-09,
+        1.2833418772117966e-08
+      ]
+    },
+    {
+      "drug_id": "DB01829",
+      "uniprot_id": "P26841",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 17,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9947294592857361,
+        0.9808343052864075,
+        0.9937626719474792,
+        0.8241740465164185,
+        0.9840009212493896
+      ]
+    },
+    {
+      "drug_id": "DB02505",
+      "uniprot_id": "P46925",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 13,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.022185681387782097,
+        0.0028850038070231676,
+        0.15034818649291992,
+        0.0029855340253561735,
+        0.10787960886955261
+      ]
+    },
+    {
+      "drug_id": "DB02307",
+      "uniprot_id": "P14756",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 13,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        0,
+        1
+      ],
+      "probs": [
+        0.8817125558853149,
+        0.9919735193252563,
+        0.9652660489082336,
+        0.03785715997219086,
+        0.9527854323387146
+      ]
+    },
+    {
+      "drug_id": "DB02426",
+      "uniprot_id": "P12235",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 13,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999998807907104,
+        0.9999997615814209,
+        0.9999535083770752,
+        1.0,
+        0.9999898672103882
+      ]
+    },
+    {
+      "drug_id": "DB02426",
+      "uniprot_id": "P24228",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 13,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9992526173591614,
+        0.9957813024520874,
+        0.9435231685638428,
+        0.9994969367980957,
+        0.9987550973892212
+      ]
+    },
+    {
+      "drug_id": "DB04310",
+      "uniprot_id": "P35372",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9997730851173401,
+        0.9831318855285645,
+        0.9999462366104126,
+        0.9814451336860657,
+        0.9917634725570679
+      ]
+    },
+    {
+      "drug_id": "DB04310",
+      "uniprot_id": "P49773",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.8200472595708561e-06,
+        0.00010191582987317815,
+        1.4462814590388007e-07,
+        1.6767649867688306e-05,
+        4.656863552554569e-07
+      ]
+    },
+    {
+      "drug_id": "DB04310",
+      "uniprot_id": "Q82ZJ0",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999594688415527,
+        0.9999873638153076,
+        0.9955754280090332,
+        0.9999171495437622,
+        0.9999194145202637
+      ]
+    },
+    {
+      "drug_id": "DB04310",
+      "uniprot_id": "P68771",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999374151229858,
+        0.9999827146530151,
+        0.9973340034484863,
+        0.999815046787262,
+        0.999934196472168
+      ]
+    },
+    {
+      "drug_id": "DB06840",
+      "uniprot_id": "O14842",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.005524515639990568,
+        0.6627981662750244,
+        0.05339105799794197,
+        0.0044356295838952065,
+        0.2764679789543152
+      ]
+    },
+    {
+      "drug_id": "DB06840",
+      "uniprot_id": "P07477",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9991000890731812,
+        0.9955032467842102,
+        0.9987959861755371,
+        0.9975606203079224,
+        0.9314128756523132
+      ]
+    },
+    {
+      "drug_id": "DB06840",
+      "uniprot_id": "P0DP23",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        0,
+        1
+      ],
+      "probs": [
+        0.6662165522575378,
+        0.892659068107605,
+        0.8960756063461304,
+        0.18833144009113312,
+        0.8616492748260498
+      ]
+    },
+    {
+      "drug_id": "DB08612",
+      "uniprot_id": "P52209",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.003493488999083638,
+        5.754173616878688e-05,
+        6.0740589105989784e-05,
+        7.928625223030394e-07,
+        0.00013512566511053592
+      ]
+    },
+    {
+      "drug_id": "DB08612",
+      "uniprot_id": "Q75Y35",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.005974886938929558,
+        0.002997164148837328,
+        2.4869559638318606e-05,
+        5.613609118881868e-06,
+        2.3319596948567778e-05
+      ]
+    },
+    {
+      "drug_id": "DB08612",
+      "uniprot_id": "P16152",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.8301551938056946,
+        0.13364994525909424,
+        0.008782802149653435,
+        0.00015888370398897678,
+        0.29367533326148987
+      ]
+    },
+    {
+      "drug_id": "DB08612",
+      "uniprot_id": "Q9UKY3",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        0,
+        1,
+        1
+      ],
+      "probs": [
+        0.9711472988128662,
+        0.8417644500732422,
+        0.1666867733001709,
+        0.9171636700630188,
+        0.5695469379425049
+      ]
+    },
+    {
+      "drug_id": "DB01118",
+      "uniprot_id": "P08588",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        0,
+        0,
+        1,
+        1
+      ],
+      "probs": [
+        0.863028347492218,
+        0.27913716435432434,
+        0.20361417531967163,
+        0.6834032535552979,
+        0.8092429637908936
+      ]
+    },
+    {
+      "drug_id": "DB01118",
+      "uniprot_id": "Q8N5S9",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 11,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0002934760123025626,
+        0.005495595745742321,
+        1.164909281214932e-05,
+        0.00030896361568011343,
+        0.0001249858905794099
+      ]
+    },
+    {
+      "drug_id": "DB01083",
+      "uniprot_id": "P07101",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 23,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "probs": [
+        0.4689549207687378,
+        0.12452630698680878,
+        0.9023855924606323,
+        0.1221679300069809,
+        0.0021427797619253397
+      ]
+    },
+    {
+      "drug_id": "DB01083",
+      "uniprot_id": "P07098",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 23,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        0,
+        0,
+        1
+      ],
+      "probs": [
+        0.8540775775909424,
+        0.9906566143035889,
+        0.4539348781108856,
+        0.24725870788097382,
+        0.9375643134117126
+      ]
+    },
+    {
+      "drug_id": "DB01083",
+      "uniprot_id": "P43681",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 23,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9981958270072937,
+        0.9705675840377808,
+        0.6627615094184875,
+        0.9865021109580994,
+        0.989503026008606
+      ]
+    },
+    {
+      "drug_id": "DB02367",
+      "uniprot_id": "P09382",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0006992390844970942,
+        0.05838244780898094,
+        0.011134394444525242,
+        0.0003618838090915233,
+        0.0001178238817374222
+      ]
+    },
+    {
+      "drug_id": "DB02367",
+      "uniprot_id": "P21796",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.008990838192403316,
+        2.0807816326851025e-05,
+        0.008005394600331783,
+        0.0017911613686010242,
+        0.0022524725645780563
+      ]
+    },
+    {
+      "drug_id": "DB02367",
+      "uniprot_id": "P08254",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9999984502792358,
+        1.0,
+        0.9999997615814209,
+        1.0,
+        0.9999991655349731
+      ]
+    },
+    {
+      "drug_id": "DB01411",
+      "uniprot_id": "P12724",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.004957279190421104,
+        0.00021714299509767443,
+        0.0008677436271682382,
+        0.001966730458661914,
+        5.9297424741089344e-05
+      ]
+    },
+    {
+      "drug_id": "DB01411",
+      "uniprot_id": "Q9Y271",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.004060316365212202,
+        4.3235380871919915e-05,
+        3.5625926102511585e-05,
+        0.0008727660751901567,
+        0.0004027936374768615
+      ]
+    },
+    {
+      "drug_id": "DB02314",
+      "uniprot_id": "P22188",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 20,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        2.7557387511478737e-05,
+        0.00031464427593164146,
+        0.0017123599536716938,
+        0.00045945937745273113,
+        0.001301756128668785
+      ]
+    },
+    {
+      "drug_id": "DB02512",
+      "uniprot_id": "P0AD63",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        0.0005681310431100428,
+        0.0009478090796619654,
+        1.4543395820965088e-07,
+        2.692237467272207e-05,
+        3.6030171486345353e-06
+      ]
+    },
+    {
+      "drug_id": "DB02512",
+      "uniprot_id": "P30542",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.0176501134828708e-11,
+        2.0203687334241494e-10,
+        4.564705384513257e-12,
+        4.591232342227025e-12,
+        1.3224761286068087e-09
+      ]
+    },
+    {
+      "drug_id": "DB02512",
+      "uniprot_id": "P04155",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.7877591744763777e-06,
+        3.0618481105193496e-05,
+        5.576294483944366e-07,
+        5.429164957604371e-07,
+        1.062806063600874e-06
+      ]
+    },
+    {
+      "drug_id": "DB02512",
+      "uniprot_id": "P05062",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9985957741737366,
+        0.9993752837181091,
+        0.9994150400161743,
+        0.9990739822387695,
+        0.9998270869255066
+      ]
+    },
+    {
+      "drug_id": "DB06154",
+      "uniprot_id": "P16442",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 12,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.6952354907989502,
+        0.9803045392036438,
+        0.8810057640075684,
+        0.816437840461731,
+        0.7597940564155579
+      ]
+    },
+    {
+      "drug_id": "DB06154",
+      "uniprot_id": "P68400",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 12,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        7.741383534209945e-09,
+        1.9204195567112947e-08,
+        2.507906948778782e-08,
+        8.005362595042698e-09,
+        1.15685585555525e-08
+      ]
+    },
+    {
+      "drug_id": "DB06154",
+      "uniprot_id": "P69905",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 12,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9028011560440063,
+        0.9518349170684814,
+        0.9688026309013367,
+        0.8726141452789307,
+        0.9198485016822815
+      ]
+    },
+    {
+      "drug_id": "DB00144",
+      "uniprot_id": "P17252",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 13,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        5.290434312854586e-09,
+        1.0639754464136786e-06,
+        2.1477373213230067e-09,
+        3.2419800177763136e-10,
+        2.625927475463641e-09
+      ]
+    },
+    {
+      "drug_id": "DB09338",
+      "uniprot_id": "P51970",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.4845237217286922e-07,
+        1.3656914177317958e-07,
+        1.4494640709017403e-05,
+        0.0031880561728030443,
+        1.922580850077793e-05
+      ]
+    },
+    {
+      "drug_id": "DB09338",
+      "uniprot_id": "P53985",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 9,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.004920477498672e-06,
+        1.0235146419290686e-06,
+        2.5780776624628743e-08,
+        1.0456270160830172e-07,
+        4.44997327875285e-09
+      ]
+    },
+    {
+      "drug_id": "DB00912",
+      "uniprot_id": "P37231",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 10,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.999354898929596,
+        0.9596127271652222,
+        0.9998503923416138,
+        0.9922717809677124,
+        0.998473584651947
+      ]
+    },
+    {
+      "drug_id": "DB00912",
+      "uniprot_id": "P22392",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 10,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.0187585886001216e-08,
+        2.176921753971328e-08,
+        2.4119120034526986e-09,
+        7.730202611355708e-08,
+        6.79382605728307e-10
+      ]
+    },
+    {
+      "drug_id": "DB00912",
+      "uniprot_id": "O43193",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 10,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.4336420406380057e-07,
+        1.738885544000368e-06,
+        1.8568631503512734e-06,
+        9.50760124851513e-07,
+        1.104730529277731e-08
+      ]
+    },
+    {
+      "drug_id": "DB04278",
+      "uniprot_id": "O75908",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 10,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        7.793204558244338e-13,
+        4.67153316030533e-10,
+        4.497915061241198e-12,
+        1.315072096358394e-11,
+        1.6049246892406444e-13
+      ]
+    },
+    {
+      "drug_id": "DB04278",
+      "uniprot_id": "P15121",
+      "label": 0,
+      "bin": ">=9",
+      "n_rot": 10,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "probs": [
+        1.8655869904460332e-10,
+        2.473833582428142e-08,
+        6.233776161934657e-08,
+        7.278448510561475e-09,
+        1.6700192617680187e-10
+      ]
+    },
+    {
+      "drug_id": "DB04278",
+      "uniprot_id": "P60568",
+      "label": 1,
+      "bin": ">=9",
+      "n_rot": 10,
+      "n_conformers": 5,
+      "seeds_used": [
+        6776679,
+        6783446,
+        6790213,
+        6796980,
+        6803747
+      ],
+      "preds": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "probs": [
+        0.9997705817222595,
+        0.9989874958992004,
+        0.9940739274024963,
+        0.9995137453079224,
+        0.9999960660934448
+      ]
+    }
+  ]
+}
