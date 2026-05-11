@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>3DICE interpretability</title>
+  <script src="https://cdn.jsdelivr.net/npm/3dmol@2.5.3/build/3Dmol-min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; background: #fafafa; color: #222; }
+    header { padding: 12px 20px; border-bottom: 1px solid #e5e5e5; background: #fff; display: flex; align-items: baseline; gap: 16px; }
+    header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+    header .sub { font-size: 13px; color: #666; }
+    .pair-form { margin-left: auto; display: flex; gap: 8px; align-items: center; font-size: 13px; }
+    .pair-form button { padding: 5px 12px; border: 0; border-radius: 4px; background: #2563eb; color: white; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .pair-form button:disabled { background: #94a3b8; cursor: wait; }
+    .combo { position: relative; }
+    .combo input { width: 230px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 13px; }
+    .combo .options { position: absolute; top: 100%; left: 0; right: 0; margin-top: 2px; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); max-height: 280px; overflow-y: auto; z-index: 10; display: none; }
+    .combo .options.open { display: block; }
+    .combo .opt { padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
+    .combo .opt:hover, .combo .opt.active { background: #eff6ff; }
+    .combo .opt:last-child { border-bottom: 0; }
+    .combo .opt .oid { font-weight: 600; font-family: ui-monospace, monospace; font-size: 12px; }
+    .combo .opt .oname { color: #666; font-size: 12px; margin-left: 6px; }
+    .combo .opt .empty { color: #999; font-size: 12px; font-style: italic; padding: 8px 10px; }
+    .hm-toggle { display: inline-flex; margin-left: 12px; font-size: 12px; font-weight: 400; }
+    .hm-toggle label { padding: 2px 8px; border: 1px solid #ccc; cursor: pointer; user-select: none; }
+    .hm-toggle label:first-of-type { border-radius: 4px 0 0 4px; border-right: 0; }
+    .hm-toggle label:last-of-type { border-radius: 0 4px 4px 0; }
+    .hm-toggle input { display: none; }
+    .hm-toggle input:checked + span { font-weight: 600; }
+    .hm-toggle label:has(input:checked) { background: #2563eb; color: white; border-color: #2563eb; }
+    main { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 12px; padding: 12px; height: calc(100% - 53px); }
+    .panel { background: white; border: 1px solid #e5e5e5; border-radius: 6px; position: relative; overflow: hidden; min-height: 0; }
+    .panel h2 { margin: 0; padding: 8px 12px; font-size: 13px; font-weight: 600; border-bottom: 1px solid #eee; background: #fafafa; }
+    .panel .body { position: absolute; top: 35px; left: 0; right: 0; bottom: 0; }
+    .citation { position: absolute; left: 10px; bottom: 8px; z-index: 2; padding: 3px 6px; border-radius: 4px; background: rgba(255,255,255,0.82); color: #666; font-size: 11px; pointer-events: none; }
+    #summary { padding: 12px; font-size: 13px; line-height: 1.6; }
+    #summary .pred { font-size: 24px; font-weight: 600; margin: 8px 0; }
+    #summary .pred.pos { color: #16a34a; }
+    #summary .pred.neg { color: #dc2626; }
+    #summary .truth { font-size: 12px; color: #666; }
+    #summary .source { margin-top: 8px; font-size: 12px; color: #666; }
+    #summary table { border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+    #summary table td { padding: 2px 8px 2px 0; }
+    #summary table td:first-child { color: #666; }
+    .err { color: #dc2626; padding: 12px; font-size: 13px; }
+    .loading { padding: 12px; color: #666; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>3DICE</h1>
+    <span class="sub">interpretability demo</span>
+    <form class="pair-form" id="pair-form">
+      <div class="combo" id="drug-combo">
+        <input id="drug-q" placeholder="drug (id or name)" autocomplete="off" />
+        <div class="options" id="drug-options"></div>
+      </div>
+      <div class="combo" id="protein-combo">
+        <input id="protein-q" placeholder="target (UniProt id or name)" autocomplete="off" />
+        <div class="options" id="protein-options"></div>
+      </div>
+      <button type="submit" id="go-btn">Predict</button>
+    </form>
+  </header>
+
+  <main>
+    <section class="panel" id="summary-panel">
+      <h2>Prediction</h2>
+      <div id="summary" class="body"><div class="loading">Loading…</div></div>
+    </section>
+
+    <section class="panel">
+      <h2>Drug (atoms coloured by attention mass)</h2>
+      <div id="drug-viewer" class="body"></div>
+      <div class="citation">Molecular graphics rendered with 3Dmol.js.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Protein (residues coloured by attention mass)</h2>
+      <div id="protein-viewer" class="body"></div>
+      <div class="citation">Molecular graphics rendered with 3Dmol.js.</div>
+    </section>
+
+    <section class="panel">
+      <h2>
+        Attention heatmap
+        <span class="hm-toggle">
+          <label><input type="radio" name="hm-dir" value="p2d" checked /><span>protein → drug</span></label>
+          <label><input type="radio" name="hm-dir" value="d2p" /><span>drug → protein</span></label>
+        </span>
+      </h2>
+      <div id="heatmap" class="body"></div>
+      <div class="citation">Graph created with Plotly.js.</div>
+    </section>
+  </main>
+
+  <script>
+  // ---- colour helpers ----
+  // Sample matplotlib's viridis at 9 stops; linearly interpolate in between.
+  const VIRIDIS = [
+    [68, 1, 84], [72, 35, 116], [64, 67, 135], [52, 94, 141],
+    [41, 120, 142], [32, 144, 140], [34, 167, 132], [68, 190, 112],
+    [121, 209, 81], [189, 222, 38], [253, 231, 36],
+  ];
+  function viridis(t) {
+    if (!isFinite(t)) t = 0;
+    t = Math.max(0, Math.min(1, t));
+    const x = t * (VIRIDIS.length - 1);
+    const i = Math.floor(x);
+    const f = x - i;
+    const a = VIRIDIS[i];
+    const b = VIRIDIS[Math.min(i + 1, VIRIDIS.length - 1)];
+    const r = Math.round(a[0] + (b[0] - a[0]) * f);
+    const g = Math.round(a[1] + (b[1] - a[1]) * f);
+    const bl = Math.round(a[2] + (b[2] - a[2]) * f);
+    return "#" + [r, g, bl].map(v => v.toString(16).padStart(2, "0")).join("");
+  }
+
+  function rowSums(m) {
+    return m.map(row => row.reduce((s, v) => s + v, 0));
+  }
+  function colSums(m) {
+    const cols = new Float32Array(m[0].length);
+    for (const row of m) for (let j = 0; j < row.length; j++) cols[j] += row[j];
+    return Array.from(cols);
+  }
+  function normalise01(arr) {
+    let lo = Infinity, hi = -Infinity;
+    for (const v of arr) { if (v < lo) lo = v; if (v > hi) hi = v; }
+    if (hi - lo < 1e-12) return arr.map(() => 0);
+    return arr.map(v => (v - lo) / (hi - lo));
+  }
+
+  // ---- viewers ----
+  let drugViewer = null;
+  let proteinViewer = null;
+
+  function renderDrug(atomSymbols, atomCoords, drugMass) {
+    const drugMassN = normalise01(drugMass);
+    const lines = [String(atomSymbols.length), "drug"];
+    for (let i = 0; i < atomSymbols.length; i++) {
+      const [x, y, z] = atomCoords[i];
+      lines.push(`${atomSymbols[i]} ${x.toFixed(6)} ${y.toFixed(6)} ${z.toFixed(6)}`);
+    }
+    const xyz = lines.join("\n") + "\n";
+
+    const el = document.getElementById("drug-viewer");
+    if (drugViewer) { drugViewer.clear(); }
+    else { drugViewer = $3Dmol.createViewer(el, { backgroundColor: "white" }); }
+    drugViewer.addModel(xyz, "xyz");
+    drugViewer.setStyle({}, { sphere: { radius: 0.22 }, stick: { radius: 0.08 } });
+    for (let i = 0; i < atomSymbols.length; i++) {
+      drugViewer.addStyle({ serial: i + 1 }, { sphere: { radius: 0.22, color: viridis(drugMassN[i]) } });
+    }
+    drugViewer.zoomTo();
+    drugViewer.render();
+  }
+
+  async function renderProtein(uniprotId, chain, resnums, residueMass) {
+    const el = document.getElementById("protein-viewer");
+
+    if (!chain || !resnums) {
+      proteinViewer = null;  // canvas about to be wiped — drop the stale reference
+      el.innerHTML = '<div class="loading">No PDB structure mapped for this UniProt ID.</div>';
+      return;
+    }
+
+    const r = await fetch(`/api/structure/${uniprotId}`);
+    if (!r.ok) {
+      proteinViewer = null;
+      el.innerHTML = '<div class="loading">Structure fetch failed.</div>';
+      return;
+    }
+    const pdbText = await r.text();
+
+    // Always rebuild from a fresh container: innerHTML="" destroys 3Dmol's canvas, so any
+    // previous viewer reference is stale and calling methods on it silently no-ops.
+    el.innerHTML = "";
+    proteinViewer = $3Dmol.createViewer(el, { backgroundColor: "white" });
+    proteinViewer.addModel(pdbText, "pdb");
+    proteinViewer.setStyle({ chain }, { cartoon: { color: "#e5e5e5" } });
+
+    const massN = normalise01(residueMass);
+    for (let i = 0; i < resnums.length; i++) {
+      if (resnums[i] === null) continue;
+      proteinViewer.setStyle(
+        { chain, resi: resnums[i] },
+        { cartoon: { color: viridis(massN[i]) } },
+      );
+    }
+    proteinViewer.zoomTo({ chain });
+    proteinViewer.render();
+  }
+
+  // Current attention payload; re-rendered when the heatmap toggle flips.
+  let lastAttention = null;
+
+  function renderHeatmap(dir) {
+    if (!lastAttention) return;
+    const { attn_p, attn_d, atom_symbols, protein_resnums } = lastAttention;
+    const Lp = attn_p.length;
+    const Ld = atom_symbols.length;
+    // Use unique integer indices for the axis so Plotly's category axis can't collapse rows
+    // when two residues share a PDB resnum (insertion codes) or when several map to None.
+    const atomIdx = Array.from({ length: Ld }, (_, i) => i);
+    const resIdx = Array.from({ length: Lp }, (_, i) => i);
+    const atomLabel = i => `${atom_symbols[i]}${i + 1}`;
+    const resLabel = i => {
+      const r = protein_resnums ? protein_resnums[i] : null;
+      return r === null || r === undefined ? `(no coords) #${i}` : `PDB ${r}`;
+    };
+    // customdata supplies the hover-only label per axis position.
+    const atomText = atomIdx.map(atomLabel);
+    const resText = resIdx.map(resLabel);
+
+    let z, x, y, xTitle, yTitle, hover, customdata;
+    if (dir === "p2d") {
+      z = attn_p;                                                // (Lp, Ld)
+      x = atomIdx; y = resIdx;
+      xTitle = "drug atom index"; yTitle = "protein residue index";
+      customdata = resIdx.map(i => atomIdx.map(j => [resText[i], atomText[j]]));
+      hover = "%{customdata[0]} (query) → %{customdata[1]}<br>weight %{z:.4f}<extra></extra>";
+    } else {
+      z = attn_d;                                                // (Ld, Lp)
+      x = resIdx; y = atomIdx;
+      xTitle = "protein residue index"; yTitle = "drug atom index";
+      customdata = atomIdx.map(i => resIdx.map(j => [atomText[i], resText[j]]));
+      hover = "%{customdata[0]} (query) → %{customdata[1]}<br>weight %{z:.4f}<extra></extra>";
+    }
+
+    Plotly.react("heatmap", [{
+      z, x, y, customdata,
+      type: "heatmap",
+      colorscale: "Viridis",
+      hovertemplate: hover,
+      colorbar: { title: "attention" },
+    }], {
+      margin: { l: 60, r: 20, t: 8, b: 50 },
+      xaxis: { title: xTitle },
+      yaxis: { title: yTitle, autorange: "reversed" },
+    }, { displayModeBar: false, responsive: true });
+  }
+
+  document.querySelectorAll('input[name="hm-dir"]').forEach(el => {
+    el.addEventListener("change", () => renderHeatmap(el.value));
+  });
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function renderSummary(r) {
+    const probPct = (r.prob_interaction * 100).toFixed(2);
+    const predClass = r.pred_label === 1 ? "pos" : "neg";
+    const predLabel = r.pred_label === 1 ? "INTERACTS" : "does not interact";
+    const truthLabel = r.true_label === null ? "unlabelled" : (r.true_label === 1 ? "interacts" : "does not interact");
+    const correct = r.true_label === null ? "" : (r.pred_label === r.true_label ? "✓ correct" : "✗ incorrect");
+    const structureLabel = r.pdb_id ? `${r.structure_source || "PDB"} ${r.pdb_id} chain ${r.chain}` : "no mapped PDB or AlphaFold structure";
+    const pdbLine = r.pdb_id ? `(${structureLabel})` : "(no PDB mapping)";
+    const drugLabel = r.drug_name ? `<strong>${escapeHtml(r.drug_name)}</strong> <span style="color:#666">(${r.drug_id})</span>` : `<strong>${r.drug_id}</strong>`;
+    const protLabel = r.protein_name ? `<strong>${escapeHtml(r.protein_name)}</strong> <span style="color:#666">(${r.uniprot_id})</span>` : `<strong>${r.uniprot_id}</strong>`;
+    document.getElementById("summary").innerHTML = `
+      <div>${drugLabel} × ${protLabel}</div>
+      <div style="color:#666;font-size:12px">${pdbLine}</div>
+      <div class="pred ${predClass}">${predLabel}</div>
+      <div class="truth">P(interaction) = ${probPct}% &nbsp;·&nbsp; ground truth: ${truthLabel} &nbsp; ${correct}</div>
+      <div class="source">Structure source: ${escapeHtml(structureLabel)}.</div>
+      <table>
+        <tr><td>protein residues (Lp)</td><td>${r.Lp}</td></tr>
+        <tr><td>drug atoms (Ld)</td><td>${r.Ld}</td></tr>
+      </table>
+    `;
+  }
+
+  async function predictPair(drugId, uniprotId) {
+    document.getElementById("summary").innerHTML = '<div class="loading">Running model…</div>';
+    let res;
+    try {
+      const r = await fetch(`/api/predict?drug_id=${encodeURIComponent(drugId)}&uniprot_id=${encodeURIComponent(uniprotId)}`);
+      if (!r.ok) {
+        const detail = await r.json().catch(() => ({}));
+        throw new Error(detail.detail || `HTTP ${r.status}`);
+      }
+      res = await r.json();
+    } catch (e) {
+      document.getElementById("summary").innerHTML = `<div class="err">${e.message}</div>`;
+      return;
+    }
+    lastAttention = {
+      attn_p: res.attn_p,
+      attn_d: res.attn_d,
+      atom_symbols: res.atom_symbols,
+      protein_resnums: res.protein_resnums,
+    };
+    // Per-side marginals from the individual attention maps (matches attentiontest.py defaults).
+    const drugMass = colSums(res.attn_p);            // per-atom mass: protein queries → drug
+    const residueMass = colSums(res.attn_d);         // per-residue mass: drug queries → protein
+    renderSummary(res);
+    renderDrug(res.atom_symbols, res.atom_coords, drugMass);
+    await renderProtein(res.uniprot_id, res.chain, res.protein_resnums, residueMass);
+    const dir = document.querySelector('input[name="hm-dir"]:checked').value;
+    renderHeatmap(dir);
+  }
+
+  // ---- combo (search dropdown) ----
+  function setupCombo(type, qInputId, optionsId, onSelect) {
+    const input = document.getElementById(qInputId);
+    const dropdown = document.getElementById(optionsId);
+    let activeIdx = -1;
+    let results = [];
+    let selected = null;
+    let debounce = null;
+
+    async function fetchResults(q) {
+      const r = await fetch(`/api/search?type=${type}&q=${encodeURIComponent(q)}&limit=20`);
+      if (!r.ok) return [];
+      const data = await r.json();
+      return data.results || [];
+    }
+
+    function renderOptions() {
+      if (!results.length) {
+        dropdown.innerHTML = '<div class="empty">no matches</div>';
+        return;
+      }
+      dropdown.innerHTML = results.map((r, i) => `
+        <div class="opt ${i === activeIdx ? 'active' : ''}" data-idx="${i}">
+          <span class="oid">${r.id}</span>${r.name ? `<span class="oname">${escapeHtml(r.name)}</span>` : ''}
+        </div>
+      `).join("");
+      dropdown.querySelectorAll(".opt").forEach(el => {
+        el.addEventListener("mousedown", e => {
+          e.preventDefault();
+          pick(Number(el.dataset.idx));
+        });
+      });
+    }
+
+    function open() { dropdown.classList.add("open"); }
+    function close() { dropdown.classList.remove("open"); activeIdx = -1; }
+
+    function pick(i) {
+      if (i < 0 || i >= results.length) return;
+      const r = results[i];
+      selected = r.id;
+      input.value = r.name ? `${r.id} — ${r.name}` : r.id;
+      close();
+      onSelect && onSelect(r.id);
+    }
+
+    input.addEventListener("input", () => {
+      selected = null;
+      clearTimeout(debounce);
+      debounce = setTimeout(async () => {
+        results = await fetchResults(input.value.trim());
+        activeIdx = results.length ? 0 : -1;
+        renderOptions();
+        open();
+      }, 120);
+    });
+    input.addEventListener("focus", async () => {
+      results = await fetchResults(input.value.trim());
+      activeIdx = results.length ? 0 : -1;
+      renderOptions();
+      open();
+    });
+    input.addEventListener("blur", () => setTimeout(close, 120));
+    input.addEventListener("keydown", e => {
+      if (!results.length) return;
+      if (e.key === "ArrowDown") { e.preventDefault(); activeIdx = (activeIdx + 1) % results.length; renderOptions(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); activeIdx = (activeIdx - 1 + results.length) % results.length; renderOptions(); }
+      else if (e.key === "Enter") { e.preventDefault(); pick(activeIdx); }
+      else if (e.key === "Escape") { close(); }
+    });
+
+    return {
+      getValue: () => selected || input.value.trim().split(/\s+/)[0],
+      setValue: (id, name) => { selected = id; input.value = name ? `${id} — ${name}` : id; },
+    };
+  }
+
+  const drugCombo = setupCombo("drug", "drug-q", "drug-options");
+  const proteinCombo = setupCombo("protein", "protein-q", "protein-options");
+
+  document.getElementById("pair-form").addEventListener("submit", e => {
+    e.preventDefault();
+    const btn = document.getElementById("go-btn");
+    btn.disabled = true;
+    const drugId = drugCombo.getValue();
+    const uniprotId = proteinCombo.getValue();
+    predictPair(drugId, uniprotId).finally(() => { btn.disabled = false; });
+  });
+
+  // Auto-load the curated case (Celecoxib × COX-2).
+  drugCombo.setValue("DB00482", "Celecoxib");
+  proteinCombo.setValue("P35354", "Prostaglandin G/H synthase 2");
+  predictPair("DB00482", "P35354");
+  </script>
+</body>
+</html>
