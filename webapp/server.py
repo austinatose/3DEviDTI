@@ -88,21 +88,28 @@ async def lifespan(app: FastAPI):
         if (PROTEIN_DIR / p).is_dir() and not p.startswith(".")
     }
 
-    drug_names: dict[str, str] = (
+    drug_records: dict[str, dict] = (
         json.loads(DRUG_NAMES_PATH.read_text()) if DRUG_NAMES_PATH.exists() else {}
     )
-    protein_names: dict[str, str] = (
+    protein_records: dict[str, dict] = (
         json.loads(PROTEIN_NAMES_PATH.read_text()) if PROTEIN_NAMES_PATH.exists() else {}
     )
-    # Restrict the search index to entities we can actually run inference on.
-    drug_index = [
-        {"id": d, "name": drug_names.get(d, "")}
-        for d in sorted(drug_emb_ids)
-    ]
-    protein_index = [
-        {"id": p, "name": protein_names.get(p, "")}
-        for p in sorted(protein_emb_ids)
-    ]
+
+    def _index_entries(ids: set[str], records: dict[str, dict]) -> list[dict]:
+        entries: list[dict] = []
+        for i in sorted(ids):
+            rec = records.get(i) or {}
+            name = rec.get("name", "")
+            aliases = rec.get("aliases", [])
+            # Searchable haystack: id + display name + every alias, lowercased.
+            search = " ".join([i, name, *aliases]).lower()
+            entries.append({"id": i, "name": name, "search": search})
+        return entries
+
+    drug_index = _index_entries(drug_emb_ids, drug_records)
+    protein_index = _index_entries(protein_emb_ids, protein_records)
+    drug_names = {k: v.get("name", "") for k, v in drug_records.items()}
+    protein_names = {k: v.get("name", "") for k, v in protein_records.items()}
     print(f"[startup] search index: {len(drug_index)} drugs, {len(protein_index)} proteins")
 
     STATE["cfg"] = cfg
@@ -164,22 +171,26 @@ def search(
     q: str = Query("", max_length=64),
     limit: int = Query(20, ge=1, le=100),
 ):
-    """Substring search on id and name (case-insensitive). Items where the query matches the
-    id are listed first; then name matches."""
+    """Substring search across id, display name, and aliases (brand names, gene symbols, etc.).
+    Items where the query matches the id rank first, then the display name, then any alias."""
     index = STATE["drug_index"] if type == "drug" else STATE["protein_index"]
     q_lower = q.strip().lower()
     if not q_lower:
-        return {"results": index[:limit]}
+        return {"results": [{"id": x["id"], "name": x["name"]} for x in index[:limit]]}
     id_hits: list[dict] = []
     name_hits: list[dict] = []
+    alias_hits: list[dict] = []
     for item in index:
+        out = {"id": item["id"], "name": item["name"]}
         if q_lower in item["id"].lower():
-            id_hits.append(item)
+            id_hits.append(out)
         elif item["name"] and q_lower in item["name"].lower():
-            name_hits.append(item)
-        if len(id_hits) + len(name_hits) >= limit * 3:
+            name_hits.append(out)
+        elif q_lower in item["search"]:
+            alias_hits.append(out)
+        if len(id_hits) + len(name_hits) + len(alias_hits) >= limit * 4:
             break
-    return {"results": (id_hits + name_hits)[:limit]}
+    return {"results": (id_hits + name_hits + alias_hits)[:limit]}
 
 
 def _load_drug_meta(drug_path: str) -> tuple[np.ndarray, np.ndarray]:
@@ -272,6 +283,7 @@ def predict(
         raise HTTPException(500, f"Lp={Lp} exceeds PDB residue count {len(struct.resnums)}")
     protein_resnums = struct.resnums[:Lp] if struct else None
     protein_icodes = struct.icodes[:Lp] if struct else None
+    protein_aa = list(struct.seq_struct[:Lp]) if struct else None
 
     return {
         "drug_id": drug_id,
@@ -293,6 +305,7 @@ def predict(
         "atom_coords": [[float(x), float(y), float(z)] for x, y, z in coords_kept],
         "protein_resnums": protein_resnums,
         "protein_icodes": protein_icodes,
+        "protein_aa": protein_aa,
     }
 
 

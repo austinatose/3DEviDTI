@@ -32,12 +32,12 @@
     .hm-toggle input { display: none; }
     .hm-toggle input:checked + span { font-weight: 600; }
     .hm-toggle label:has(input:checked) { background: #2563eb; color: white; border-color: #2563eb; }
-    main { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 12px; padding: 12px; height: calc(100% - 53px); }
+    main { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1.2fr 1.2fr 0.7fr; gap: 12px; padding: 12px; height: calc(100% - 53px); }
     .panel { background: white; border: 1px solid #e5e5e5; border-radius: 6px; position: relative; overflow: hidden; min-height: 0; }
     .panel h2 { margin: 0; padding: 8px 12px; font-size: 13px; font-weight: 600; border-bottom: 1px solid #eee; background: #fafafa; }
     .panel .body { position: absolute; top: 35px; left: 0; right: 0; bottom: 0; }
     .citation { position: absolute; left: 10px; bottom: 8px; z-index: 2; padding: 3px 6px; border-radius: 4px; background: rgba(255,255,255,0.82); color: #666; font-size: 11px; pointer-events: none; }
-    #summary { padding: 12px; font-size: 13px; line-height: 1.6; }
+    #summary { padding: 12px; font-size: 13px; line-height: 1.6; overflow-y: auto; }
     #summary .pred { font-size: 24px; font-weight: 600; margin: 8px 0; }
     #summary .pred.pos { color: #16a34a; }
     #summary .pred.neg { color: #dc2626; }
@@ -96,6 +96,18 @@
       <div id="heatmap" class="body"></div>
       <div class="citation">Graph created with Plotly.js.</div>
     </section>
+
+    <section class="panel">
+      <h2>Per-residue joint mass</h2>
+      <div id="residue-bar" class="body"></div>
+      <div class="citation">Graph created with Plotly.js.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Per-atom joint mass</h2>
+      <div id="atom-bar" class="body"></div>
+      <div class="citation">Graph created with Plotly.js.</div>
+    </section>
   </main>
 
   <script>
@@ -120,6 +132,17 @@
     return "#" + [r, g, bl].map(v => v.toString(16).padStart(2, "0")).join("");
   }
 
+  const ONE_TO_THREE = {
+    A: "ALA", R: "ARG", N: "ASN", D: "ASP", C: "CYS", Q: "GLN", E: "GLU", G: "GLY",
+    H: "HIS", I: "ILE", L: "LEU", K: "LYS", M: "MET", F: "PHE", P: "PRO", S: "SER",
+    T: "THR", W: "TRP", Y: "TYR", V: "VAL", X: "UNK",
+  };
+  function residueLabel(aa1, resnum, idx) {
+    const three = ONE_TO_THREE[(aa1 || "X").toUpperCase()] || "UNK";
+    if (resnum === null || resnum === undefined) return `${three} (no coords) #${idx}`;
+    return `${three} ${resnum}`;
+  }
+
   function rowSums(m) {
     return m.map(row => row.reduce((s, v) => s + v, 0));
   }
@@ -127,6 +150,23 @@
     const cols = new Float32Array(m[0].length);
     for (const row of m) for (let j = 0; j < row.length; j++) cols[j] += row[j];
     return Array.from(cols);
+  }
+
+  // Geometric-mean joint map — rewards agreement between protein→drug and drug→protein
+  // attention without being as peaky as the raw product.
+  function jointMap(attnP, attnD) {
+    const Lp = attnP.length;
+    const Ld = attnP[0].length;
+    const eps = 1e-12;
+    const out = Array.from({ length: Lp }, () => new Float32Array(Ld));
+    for (let i = 0; i < Lp; i++) {
+      for (let j = 0; j < Ld; j++) {
+        const p = Math.max(0, attnP[i][j]);
+        const d = Math.max(0, attnD[j][i]);
+        out[i][j] = Math.sqrt(p * d + eps);
+      }
+    }
+    return out;
   }
   function normalise01(arr) {
     let lo = Infinity, hi = -Infinity;
@@ -209,10 +249,8 @@
     const atomIdx = Array.from({ length: Ld }, (_, i) => i);
     const resIdx = Array.from({ length: Lp }, (_, i) => i);
     const atomLabel = i => `${atom_symbols[i]}${i + 1}`;
-    const resLabel = i => {
-      const r = protein_resnums ? protein_resnums[i] : null;
-      return r === null || r === undefined ? `(no coords) #${i}` : `PDB ${r}`;
-    };
+    const aa = lastAttention.protein_aa;
+    const resLabel = i => residueLabel(aa ? aa[i] : null, protein_resnums ? protein_resnums[i] : null, i);
     // customdata supplies the hover-only label per axis position.
     const atomText = atomIdx.map(atomLabel);
     const resText = resIdx.map(resLabel);
@@ -249,6 +287,46 @@
     el.addEventListener("change", () => renderHeatmap(el.value));
   });
 
+  function renderJointBars() {
+    if (!lastAttention) return;
+    const { attn_p, attn_d, atom_symbols, protein_resnums } = lastAttention;
+    const joint = jointMap(attn_p, attn_d);
+    const Lp = joint.length;
+    const Ld = atom_symbols.length;
+
+    const residueMass = rowSums(joint);                       // (Lp,)
+    const atomMass = colSums(joint);                          // (Ld,)
+    const resIdx = Array.from({ length: Lp }, (_, i) => i);
+    const atomIdx = Array.from({ length: Ld }, (_, i) => i);
+    const aa = lastAttention.protein_aa;
+    const resHover = resIdx.map(i => residueLabel(aa ? aa[i] : null, protein_resnums ? protein_resnums[i] : null, i));
+    const atomHover = atomIdx.map(i => `${atom_symbols[i]}${i + 1}`);
+
+    Plotly.react("residue-bar", [{
+      x: resIdx, y: residueMass,
+      type: "bar",
+      marker: { color: residueMass, colorscale: "Viridis" },
+      customdata: resHover,
+      hovertemplate: "%{customdata}<br>joint mass %{y:.4f}<extra></extra>",
+    }], {
+      margin: { l: 50, r: 20, t: 8, b: 40 },
+      xaxis: { title: "protein residue index" },
+      yaxis: { title: "joint mass" },
+    }, { displayModeBar: false, responsive: true });
+
+    Plotly.react("atom-bar", [{
+      x: atomIdx, y: atomMass,
+      type: "bar",
+      marker: { color: atomMass, colorscale: "Viridis" },
+      customdata: atomHover,
+      hovertemplate: "%{customdata}<br>joint mass %{y:.4f}<extra></extra>",
+    }], {
+      margin: { l: 50, r: 20, t: 8, b: 40 },
+      xaxis: { title: "drug atom index", tickmode: "array", tickvals: atomIdx, ticktext: atom_symbols.map((s, i) => `${s}${i + 1}`), tickfont: { size: 9 } },
+      yaxis: { title: "joint mass" },
+    }, { displayModeBar: false, responsive: true });
+  }
+
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
@@ -256,7 +334,7 @@
   function renderSummary(r) {
     const probPct = (r.prob_interaction * 100).toFixed(2);
     const predClass = r.pred_label === 1 ? "pos" : "neg";
-    const predLabel = r.pred_label === 1 ? "INTERACTS" : "does not interact";
+    const predLabel = r.pred_label === 1 ? "INTERACTS" : "DOES NOT INTERACT";
     const truthLabel = r.true_label === null ? "unlabelled" : (r.true_label === 1 ? "interacts" : "does not interact");
     const correct = r.true_label === null ? "" : (r.pred_label === r.true_label ? "✓ correct" : "✗ incorrect");
     const structureLabel = r.pdb_id ? `${r.structure_source || "PDB"} ${r.pdb_id} chain ${r.chain}` : "no mapped PDB or AlphaFold structure";
@@ -273,6 +351,27 @@
         <tr><td>protein residues (Lp)</td><td>${r.Lp}</td></tr>
         <tr><td>drug atoms (Ld)</td><td>${r.Ld}</td></tr>
       </table>
+      <div id="top-residues" style="margin-top: 10px; font-size: 12px;"></div>
+    `;
+  }
+
+  function renderTopResidues(k = 5) {
+    const el = document.getElementById("top-residues");
+    if (!el || !lastAttention) return;
+    const { attn_p, attn_d, protein_resnums, protein_aa } = lastAttention;
+    const joint = jointMap(attn_p, attn_d);
+    const mass = rowSums(joint);
+    const ranked = mass
+      .map((m, i) => ({ i, m }))
+      .sort((a, b) => b.m - a.m)
+      .slice(0, k);
+    const rows = ranked.map(({ i, m }) => {
+      const label = residueLabel(protein_aa ? protein_aa[i] : null, protein_resnums ? protein_resnums[i] : null, i);
+      return `<tr><td style="color:#666;padding-right:10px">${label}</td><td>${m.toFixed(4)}</td></tr>`;
+    }).join("");
+    el.innerHTML = `
+      <div style="color:#666;margin-bottom:4px">Top ${k} residues by joint mass</div>
+      <table style="font-family: ui-monospace, monospace; font-size: 12px;">${rows}</table>
     `;
   }
 
@@ -295,6 +394,7 @@
       attn_d: res.attn_d,
       atom_symbols: res.atom_symbols,
       protein_resnums: res.protein_resnums,
+      protein_aa: res.protein_aa,
     };
     // Per-side marginals from the individual attention maps (matches attentiontest.py defaults).
     const drugMass = colSums(res.attn_p);            // per-atom mass: protein queries → drug
@@ -304,6 +404,8 @@
     await renderProtein(res.uniprot_id, res.chain, res.protein_resnums, residueMass);
     const dir = document.querySelector('input[name="hm-dir"]:checked').value;
     renderHeatmap(dir);
+    renderJointBars();
+    renderTopResidues();
   }
 
   // ---- combo (search dropdown) ----

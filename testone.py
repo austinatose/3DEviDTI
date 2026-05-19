@@ -1,7 +1,8 @@
 import argparse
 import glob
+import json
 import os
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -9,6 +10,30 @@ import torch
 from config.cfg import get_cfg_defaults
 from model import Model
 
+
+# Keys are 1-based UniProt FASTA indices for P35354 (the 17-residue signal peptide
+# is included in the FASTA, so PDB-mature numbering = FASTA index - 14 here, not +14).
+# Canonical-anchor labels in comments use the conventional PDB-mature numbering.
+PLIP_CONTACTS = {
+    106: ['halogen'],
+    189: ['hbond'],          # Gln192 (PDB-mature), canonical sulfonamide anchor
+    335: ['hydrophobic'],
+    338: ['hydrophobic'],    # Leu352 (PDB-mature), canonical
+    339: ['hbond'],
+    341: ['hbond'],
+    370: ['hydrophobic'],
+    371: ['hydrophobic'],    # Tyr385 (PDB-mature), canonical
+    373: ['hydrophobic'],    # Trp387 (PDB-mature), canonical
+    499: ['hbond'],          # Arg513 (PDB-mature), canonical
+    504: ['hbond', 'hydrophobic'],
+    509: ['hydrophobic'],
+    513: ['hydrophobic'],
+}
+
+GLN192_FASTA_KEY = 189  # PDB-mature 192 -> UniProt FASTA 189; chart label stays "Gln192"
+
+# FASTA, PLIP, and the embeddings have inconsistent numbering schemes.
+# FASTA alignment was previously performed. The PLIP indices here are separately aligned directly to the embeddings
 
 def _load_protein_embedding(path: str) -> torch.Tensor:
 	if os.path.isdir(path):
@@ -77,6 +102,23 @@ def _align_atom_labels(labels: Optional[np.ndarray], Ld: int) -> Optional[np.nda
     return labels[:Ld]
 
 
+def _resolve_map_json(protein_emb_path: str) -> Optional[str]:
+    """Mirror biotite_mapping output layout: interpretation/mappings/<protein_id>/<stem>.map.json."""
+    parent = os.path.basename(os.path.dirname(os.path.abspath(protein_emb_path)))
+    stem = os.path.basename(protein_emb_path).split(".")[0]  # strip every dotted suffix (e.g. ".cif.pt")
+    candidate = os.path.join("interpretation", "mappings", parent, f"{stem}.map.json")
+    return candidate if os.path.exists(candidate) else None
+
+
+def _load_fasta_to_struct(map_json_path: str) -> List[Optional[int]]:
+    with open(map_json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    arr = data.get("fasta_to_struct")
+    if not isinstance(arr, list):
+        raise ValueError(f"map_json missing fasta_to_struct: {map_json_path}")
+    return [None if x is None else int(x) for x in arr]
+
+
 def _apply_sparse_ticks(ax, labels: np.ndarray, axis: str, max_ticks: int = 50) -> None:
     stride = max(1, int(len(labels) // max_ticks))
     ticks = np.arange(0, len(labels), stride)
@@ -103,7 +145,23 @@ def main() -> None:
         choices=["geom", "arith", "harm", "prod", "min"],
     )
     parser.add_argument("--top_k", type=int, default=20)
+    parser.add_argument(
+        "--map_json",
+        type=str,
+        default=None,
+        help="Path to a .map.json (FASTA<->struct). If omitted, auto-resolve from --protein_emb. "
+             "Used to align PLIP FASTA indices onto the model's struct-indexed chart.",
+    )
     args = parser.parse_args()
+
+    map_json_path = args.map_json or _resolve_map_json(args.protein_emb)
+    fasta_to_struct: Optional[List[Optional[int]]] = None
+    if map_json_path is not None:
+        try:
+            fasta_to_struct = _load_fasta_to_struct(map_json_path)
+        except Exception as exc:
+            print(f"[warn] failed to load mapping {map_json_path}: {exc}")
+            fasta_to_struct = None
 
     cfg = get_cfg_defaults()
     device = torch.device(args.device)
@@ -196,6 +254,110 @@ def main() -> None:
     ax.set_xlabel("Protein residue index")
     ax.set_ylabel(f"Joint mass ({args.joint_mode})")
     ax.set_title(f"Protein per-residue joint mass - {pair_label}")
+
+    from matplotlib.lines import Line2D
+
+    plip_color = "C3"
+    shape_for = {"hbond": "o", "hydrophobic": "s", "halogen": "^"}
+    ymax = float(np.nanmax(protein_joint)) if protein_joint.size else 0.0
+
+    def _fasta1_to_struct0(fasta_1based: int) -> Optional[int]:
+        """Translate a 1-based FASTA index to a 0-based struct (bar-chart) index."""
+        if fasta_to_struct is None:
+            return None
+        fasta_0 = fasta_1based - 1
+        if fasta_0 < 0 or fasta_0 >= len(fasta_to_struct):
+            return None
+        s = fasta_to_struct[fasta_0]
+        if s is None or s < 0 or s >= len(protein_joint):
+            return None
+        return s
+
+    plip_xs = {
+        residue: _fasta1_to_struct0(residue) for residue in PLIP_CONTACTS
+    }
+    have_overlay = ymax > 0.0 and fasta_to_struct is not None and any(
+        v is not None for v in plip_xs.values()
+    )
+
+    if have_overlay:
+        # Flatten to one (x, residue, type) per glyph, then greedy-cluster left-to-right
+        # so markers whose x positions are too close to render side-by-side stack vertically.
+        markers: list[tuple[int, int, str]] = []
+        skipped: list[int] = []
+        for residue_idx, types in PLIP_CONTACTS.items():
+            x = plip_xs.get(residue_idx)
+            if x is None:
+                skipped.append(residue_idx)
+                continue
+            for t in types:
+                markers.append((x, residue_idx, t))
+        markers.sort(key=lambda m: (m[0], m[1]))
+
+        # cluster_gap relative to axis range (marker s=55 -> ~7pt diameter,
+        # ~7 struct units on a 10-inch axis for L_struct ~ 550).
+        cluster_gap = max(3.0, len(protein_joint) * 0.012)
+        rows: list[int] = []
+        cluster_start = 0
+        prev_x: Optional[int] = None
+        for i, (x, _, _) in enumerate(markers):
+            if prev_x is None or (x - prev_x) > cluster_gap:
+                cluster_start = i
+                rows.append(0)
+            else:
+                rows.append(i - cluster_start)
+            prev_x = x
+        max_row = max(rows) if rows else 0
+
+        band_base = ymax * 1.04
+        row_offset = ymax * 0.04
+        y_upper = max(ymax * 1.15, band_base + (max_row + 1) * row_offset)
+        ax.set_ylim(0, y_upper)
+
+        for (x, _residue, t), row in zip(markers, rows):
+            marker_y = band_base + row * row_offset
+            curve_y = float(protein_joint[x])
+            ax.plot(
+                [x, x], [curve_y, marker_y],
+                linestyle=":", linewidth=1.0, color=plip_color, alpha=0.25, zorder=9,
+            )
+            ax.scatter(
+                [x], [marker_y],
+                marker=shape_for[t], s=55, linewidths=1.5,
+                facecolor="none", edgecolor=plip_color, zorder=10,
+            )
+
+        gln192_x = plip_xs.get(GLN192_FASTA_KEY)
+        if gln192_x is not None:
+            gln_y = band_base
+            for (x, residue, _t), row in zip(markers, rows):
+                if residue == GLN192_FASTA_KEY:
+                    gln_y = band_base + row * row_offset
+                    break
+            ax.annotate(
+                "Gln192",
+                xy=(gln192_x, gln_y),
+                xytext=(8, 0), textcoords="offset points",
+                fontsize=8, color=plip_color, va="center",
+            )
+
+        legend_handles = [
+            Line2D([0], [0], marker="o", linestyle="", markerfacecolor="none",
+                   markeredgecolor=plip_color, markersize=7, markeredgewidth=1.5,
+                   label="PLIP H-bond"),
+            Line2D([0], [0], marker="s", linestyle="", markerfacecolor="none",
+                   markeredgecolor=plip_color, markersize=7, markeredgewidth=1.5,
+                   label="PLIP hydrophobic"),
+            Line2D([0], [0], marker="^", linestyle="", markerfacecolor="none",
+                   markeredgecolor=plip_color, markersize=7, markeredgewidth=1.5,
+                   label="PLIP halogen"),
+        ]
+        ax.legend(handles=legend_handles, loc="upper right",
+                  framealpha=0.9, fontsize=9)
+
+        if skipped:
+            print(f"[plip] residues without struct mapping (skipped): {skipped}")
+
     fig.tight_layout()
 
     # Drug bar chart
